@@ -3,9 +3,8 @@ project(
     'cpp',
     version: '0.0.42-B',
     default_options: [
-        'cpp_std=c++2a',
+        'cpp_std=c++17',
         'buildtype=debugoptimized',
-        'default_library=static'
     ]
 )
 
