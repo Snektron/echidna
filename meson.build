@@ -10,7 +10,8 @@ project(
 )
 
 sources = [
-    'src/net/socket.cpp'
+    'src/net/socket.cpp',
+    'src/main.cpp'
 ]
 
 include = include_directories('include')
