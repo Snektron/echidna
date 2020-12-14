@@ -10,17 +10,27 @@ project(
 
 sources = [
     'src/net/socket.cpp',
-    'src/net/serversocket.cpp',
-    'src/main.cpp'
+    'src/net/serversocket.cpp'
 ]
 
 include = include_directories('include')
 
+opencl_dep = dependency('OpenCL')
+
 executable(
     'echidna',
-    sources,
+    sources + ['src/main.cpp'],
     install: true,
     build_by_default: true,
     include_directories: include,
     dependencies: dependency('threads')
+)
+
+executable(
+    'echidna-client',
+    sources + ['src/client.cpp'],
+    install: true,
+    build_by_default: true,
+    include_directories: include,
+    dependencies: opencl_dep
 )
