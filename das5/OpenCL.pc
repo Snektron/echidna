@@ -1,0 +1,10 @@
+prefix=/cm/shared/apps/cuda11.1/toolkit/11.1.1/targets/x86_64-linux/
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${exec_prefix}/include
+
+Name: OpenCL
+Description: Open Compute Language DAS5 Nvidia
+Version: 1.2
+Libs: -L${libdir} -lOpenCL
+Cflags: -I${includedir}
