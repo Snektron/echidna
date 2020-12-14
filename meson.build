@@ -11,6 +11,7 @@ project(
 
 sources = [
     'src/net/socket.cpp',
+    'src/net/serversocket.cpp',
     'src/main.cpp'
 ]
 
@@ -21,5 +22,6 @@ executable(
     sources,
     install: true,
     build_by_default: true,
-    include_directories: include
+    include_directories: include,
+    dependencies: dependency('threads')
 )

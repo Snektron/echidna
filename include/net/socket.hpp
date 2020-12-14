@@ -14,6 +14,7 @@ namespace echidna::net {
             Socket();
             Socket(const Socket&) = delete;
             Socket(Socket&&);
+            Socket(int);
             ~Socket();
 
             Socket& operator=(const Socket&) = delete;

@@ -17,19 +17,24 @@ namespace echidna::net {
         this->platform_data->sock = -1;
     }
 
+    Socket::Socket(Socket&& other) : platform_data(other.platform_data) {
+        other.platform_data = nullptr;
+    }
+
+    Socket::Socket(int sock) {
+        this->platform_data = new socket_platform_data;
+
+        this->platform_data->sock = sock;
+    }
+
     Socket::~Socket() {
         this->close();
 
         delete this->platform_data;
     }
 
-    Socket::Socket(Socket&& other) : platform_data(other.platform_data) {
-        other.platform_data = nullptr;
-    }
-
     Socket& Socket::operator=(Socket&& other) {
-        this->platform_data = other.platform_data;
-        other.platform_data = nullptr;
+        std::swap(this->platform_data, other.platform_data);
         return *this;
     }
 
@@ -44,9 +49,8 @@ namespace echidna::net {
         struct addrinfo* addresses;
 
         int status = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &addresses);
-        if(status != 0) {
+        if(status != 0)
             throw error::SocketException("Failed to resolve hostname ", host, " at port ", port, ", error ", status);
-        }
 
         for(struct addrinfo* addr = addresses; addr != nullptr; addr = addr->ai_next) {
             int sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
