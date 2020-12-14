@@ -13,13 +13,18 @@ sources = [
     'src/net/serversocket.cpp'
 ]
 
+server_sources = [
+    'src/server/server.cpp',
+    'src/server/main.cpp'
+]
+
 include = include_directories('include')
 
 opencl_dep = dependency('OpenCL')
 
 executable(
     'echidna-server',
-    sources + ['src/server/main.cpp'],
+    sources + server_sources,
     install: true,
     build_by_default: true,
     include_directories: include,
