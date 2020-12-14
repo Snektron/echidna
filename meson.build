@@ -18,8 +18,8 @@ include = include_directories('include')
 opencl_dep = dependency('OpenCL')
 
 executable(
-    'echidna',
-    sources + ['src/main.cpp'],
+    'echidna-server',
+    sources + ['src/server/main.cpp'],
     install: true,
     build_by_default: true,
     include_directories: include,
@@ -28,9 +28,17 @@ executable(
 
 executable(
     'echidna-client',
-    sources + ['src/client.cpp'],
+    sources + ['src/client/main.cpp'],
     install: true,
-    build_by_default: true,
+    build_by_default: false,
     include_directories: include,
     dependencies: opencl_dep
+)
+
+executable(
+    'echidna-cli',
+    sources + ['src/cli/main.cpp'],
+    install: true,
+    build_by_default: false,
+    include_directories: include
 )
