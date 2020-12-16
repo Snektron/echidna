@@ -3,6 +3,8 @@
 
 #include "net/socket.hpp"
 
+#include <memory>
+
 namespace echidna::net {
     struct serversocket_platform_data;
 
@@ -21,7 +23,7 @@ namespace echidna::net {
             void bind(const std::string&, int);
             void close();
 
-            Socket accept();
+            std::unique_ptr<Socket> accept();
     };
 }
 

@@ -14,8 +14,10 @@ sources = [
 ]
 
 server_sources = [
-    'src/server/server.cpp',
-    'src/server/main.cpp'
+    'src/server/clienthandler.cpp',
+    'src/server/clientmanager.cpp',
+    'src/server/main.cpp',
+    'src/server/server.cpp'
 ]
 
 include = include_directories('include')

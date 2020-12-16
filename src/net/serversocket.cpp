@@ -77,10 +77,10 @@ namespace echidna::net {
         }
     }
 
-    Socket ServerSocket::accept() {
+    std::unique_ptr<Socket> ServerSocket::accept() {
         int result = ::accept(this->platform_data->sock, NULL, NULL);
         if(result == -1)
             throw error::SocketException("Failed to except a connection on the server socket, error: ", errno);
-        return Socket(result);
+        return std::unique_ptr<Socket>(new Socket(result));
     }
 }
