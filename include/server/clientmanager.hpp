@@ -17,8 +17,10 @@ namespace echidna::server {
         private:
             net::ServerSocket server;
             int server_port;
+            size_t keepalive_time;
 
             std::thread server_thread;
+            std::thread keepalive_thread;
             std::atomic<bool> active;
             std::shared_mutex client_map_mutex;
 
@@ -29,11 +31,12 @@ namespace echidna::server {
             void handleClients();
             void handleKeepAlive();
         public:
-            ClientManager(int);
+            ClientManager(int, size_t);
             ~ClientManager();
 
             void run();
             void join();
+            void stop();
     };
 }
 

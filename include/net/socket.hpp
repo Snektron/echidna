@@ -28,6 +28,13 @@ namespace echidna::net {
 
             void sendFully(const void*, size_t);
             void recvFully(void*, size_t);
+
+            template <typename T>
+            T recv() {
+                T result;
+                this->recvFully(&result, sizeof(T));
+                return result;
+            }
     };
 }
 

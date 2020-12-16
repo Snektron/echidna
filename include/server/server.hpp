@@ -11,6 +11,7 @@ namespace echidna::server {
         public:
             struct Config {
                 int client_port;
+                size_t client_keepalive_timeout;
             };
 
             Server(const Config&);

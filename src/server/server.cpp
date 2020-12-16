@@ -1,7 +1,7 @@
 #include "server/server.hpp"
 
 namespace echidna::server {
-    Server::Server(const Config& config) : client_manager(config.client_port) {}
+    Server::Server(const Config& config) : client_manager(config.client_port, config.client_keepalive_timeout) {}
 
     Server::~Server() {}
 
