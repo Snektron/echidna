@@ -18,7 +18,13 @@ $ ninja echidna-client
 
 ## DAS-5 Setup
 
-On the DAS-5, one must first set the environment appropriately. Because of some misconfigurations,
+On the DAS-5, one must first set the environment appropriately. As Echidna requires a C++17 capable compiler, one must first load an appropriate GCC environment:
+```
+$ module load gcc/9.3.0
+```
+
+### Compiling the client
+Because of some misconfigurations,
 the OpenCL package config provided by the opencl-intel module cannot be used. Instead, the package
 config included in the das5/ directory should be used when compiling the client:
 ```
