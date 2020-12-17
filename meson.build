@@ -23,6 +23,7 @@ server_sources = [
 client_sources = [
     'src/client/main.cpp',
     'src/client/device.cpp',
+    'src/client/renderer.cpp',
     'src/client/clerror.cpp',
 ]
 
