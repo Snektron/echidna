@@ -10,11 +10,11 @@
 namespace echidna::server {
     class Job {
         private:
-            const std::string shader;
-            const uint32_t total_frames;
-            const uint32_t fps;
-            const uint32_t width;
-            const uint32_t height;
+            std::string shader;
+            uint32_t total_frames;
+            uint32_t fps;
+            uint32_t width;
+            uint32_t height;
 
             uint32_t frames_submitted;
             std::atomic<uint32_t> frames_rendered;

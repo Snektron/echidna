@@ -3,9 +3,11 @@
 
 #include "net/socket.hpp"
 #include "protocol/packet.hpp"
+#include "server/task.hpp"
 
 #include <memory>
 #include <cstdint>
+#include <vector>
 
 #include <atomic>
 #include <thread>
@@ -20,6 +22,7 @@ namespace echidna::server {
             std::unique_ptr<net::Socket> socket;
             ClientManager& manager;
             uint32_t client_id;
+            std::vector<Task> active_tasks;
 
             std::thread active_thread;
             std::mutex send_mutex;
@@ -30,7 +33,6 @@ namespace echidna::server {
             std::atomic<bool> keepalive;
 
             protocol::ClientPacketID last_packet;
-
 
             bool issueRequest(const void*, size_t);
             void handleResponse();
@@ -43,6 +45,9 @@ namespace echidna::server {
             void stop();
 
             bool tryKeepAlive();
+
+            size_t getJobCapability() const;
+            void submitTasks(const std::vector<Task>&);
     };
 }
 

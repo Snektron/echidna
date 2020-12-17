@@ -80,4 +80,13 @@ namespace echidna::server {
 
         this->stop();
     }
+
+    size_t ClientHandler::getJobCapability() const {
+        //TODO
+        return 5;
+    }
+
+    void ClientHandler::submitTasks(const std::vector<Task>& tasks) {
+
+    }
 }

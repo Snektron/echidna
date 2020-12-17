@@ -6,7 +6,8 @@
 #include <chrono>
 
 namespace echidna::server {
-    ClientManager::ClientManager(int server_port, size_t keepalive_time) : server_port(server_port), keepalive_time(keepalive_time), active(false), client_id_offset(0) {
+    ClientManager::ClientManager(int server_port, size_t keepalive_time, JobQueue& job_queue) : server_port(server_port), keepalive_time(keepalive_time),
+                                    job_queue(job_queue), active(false), client_id_offset(0) {
     }
 
     ClientManager::~ClientManager() {
@@ -23,10 +24,12 @@ namespace echidna::server {
 
         this->server_thread = std::thread(&ClientManager::handleClients, this);
         this->keepalive_thread = std::thread(&ClientManager::handleKeepAlive, this);
+        this->job_distribution_thread = std::thread(&ClientManager::handleJobDistribution, this);
     }
 
     void ClientManager::join() {
         this->server_thread.join();
+        this->keepalive_thread.join();
 
         std::shared_lock(this->client_map_mutex);
         for(auto& it : this->client_map) {
@@ -91,6 +94,42 @@ namespace echidna::server {
                     delete it.second;
                     this->client_map.erase(it.first);
                 }
+            }
+        }
+    }
+
+    void ClientManager::handleJobDistribution() {
+        while(this->active) {
+            uint32_t free_client_id;
+            {
+                std::unique_lock free_lock(this->free_client_mutex);
+                //TODO: wait if no free clients
+                free_client_id = this->free_clients.front();
+                this->free_clients.pop_front();
+            }
+
+            size_t job_capability;
+            {
+                std::shared_lock client_map_lock(this->client_map_mutex);
+                if(this->client_map.count(free_client_id) == 0)
+                    continue;
+
+                ClientHandler* handler = this->client_map[free_client_id];
+                job_capability = handler->getJobCapability();
+            }
+
+            std::vector<Task> tasks = this->job_queue.getJobs(job_capability);
+
+            {
+                std::shared_lock client_map_lock(this->client_map_mutex);
+                if(this->client_map.count(free_client_id) == 0) {
+                    client_map_lock.release();
+                    this->job_queue.addTasks(tasks);
+                    continue;
+                }
+
+                ClientHandler* handler = this->client_map[free_client_id];
+                handler->submitTasks(tasks);
             }
         }
     }

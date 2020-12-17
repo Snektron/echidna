@@ -2,11 +2,13 @@
 #define _ECHIDNA_SERVER_SERVER_HPP
 
 #include "server/clientmanager.hpp"
+#include "server/jobqueue.hpp"
 
 namespace echidna::server {
 
     class Server {
         private:
+            JobQueue job_queue;
             ClientManager client_manager;
         public:
             struct Config {
