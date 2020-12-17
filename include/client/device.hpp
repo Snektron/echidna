@@ -1,6 +1,8 @@
 #ifndef _ECHIDNA_CLIENT_DEVICE_HPP
 #define _ECHIDNA_CLIENT_DEVICE_HPP
 
+#include "client/clutil.hpp"
+
 #include <CL/cl.h>
 #include <string>
 #include <vector>
@@ -8,18 +10,11 @@
 namespace echidna::client {
     struct Device {
         cl_device_id device_id;
-        cl_context context;
-        cl_command_queue command_queue;
+
+        UniqueContext context;
+        UniqueCommandQueue command_queue;
 
         Device(cl_device_id device_id);
-
-        Device(const Device&) = delete;
-        Device(Device&&);
-
-        Device& operator=(const Device&) = delete;
-        Device& operator=(Device&&);
-
-        ~Device();
 
         std::string name() const;
 

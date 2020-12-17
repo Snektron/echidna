@@ -8,7 +8,7 @@ namespace echidna::utils::string {
     template <typename... T>
     std::string make_string(const T&... args) {
         std::stringstream ss;
-        (ss << ... << args);
+        (void) (ss << ... << args);
         return ss.str();
     }
 }

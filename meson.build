@@ -25,6 +25,7 @@ client_sources = [
     'src/client/device.cpp',
     'src/client/renderer.cpp',
     'src/client/clerror.cpp',
+    'src/client/clutil.cpp',
 ]
 
 add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')
