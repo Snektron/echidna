@@ -21,7 +21,7 @@ namespace echidna::client {
         UniqueCLHandle(T handle): handle(handle) {}
 
         UniqueCLHandle(UniqueCLHandle&& other):
-            handle(std::exchange(other, nullptr)) {}
+            handle(std::exchange(other.handle, nullptr)) {}
 
         UniqueCLHandle(const UniqueCLHandle&) = delete;
 
