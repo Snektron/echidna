@@ -7,6 +7,7 @@
 #include <memory>
 #include <cstdint>
 
+#include <atomic>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
