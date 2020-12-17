@@ -16,15 +16,17 @@ sources = [
 server_sources = [
     'src/server/clienthandler.cpp',
     'src/server/clientmanager.cpp',
+    'src/server/job.cpp',
     'src/server/main.cpp',
-    'src/server/server.cpp'
+    'src/server/server.cpp',
+    'src/server/task.cpp'
 ]
 
 client_sources = [
-    'src/client/main.cpp',
-    'src/client/device.cpp',
-    'src/client/renderer.cpp',
     'src/client/clerror.cpp',
+    'src/client/device.cpp',
+    'src/client/main.cpp',
+    'src/client/renderer.cpp',
 ]
 
 add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')
