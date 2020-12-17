@@ -3,6 +3,7 @@
 
 #include <CL/cl.h>
 #include <string>
+#include <vector>
 
 namespace echidna::client {
     struct Device {
