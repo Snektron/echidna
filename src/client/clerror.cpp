@@ -34,6 +34,7 @@ namespace echidna::client {
             case CL_INVALID_MEM_OBJECT: return "invalid memory object";
             case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR: return "invalid image format descriptor";
             case CL_INVALID_IMAGE_SIZE: return "invalid image size";
+            case CL_INVALID_SAMPLER: return "invalid sampler";
             case CL_INVALID_BINARY: return "invalid binary";
             case CL_INVALID_BUILD_OPTIONS: return "invalid build options";
             case CL_INVALID_PROGRAM: return "invalid program";
@@ -51,6 +52,7 @@ namespace echidna::client {
             case CL_INVALID_GLOBAL_OFFSET: return "invalid global offset";
             case CL_INVALID_EVENT_WAIT_LIST: return "invalid event wait list";
             case CL_INVALID_EVENT: return "invalid event";
+            case CL_INVALID_OPERATION: return "invalid operation";
             case CL_INVALID_GL_OBJECT: return "invalid OpenGL object";
             case CL_INVALID_BUFFER_SIZE: return "invalid buffer size";
             case CL_INVALID_MIP_LEVEL: return "invalid mip level";
