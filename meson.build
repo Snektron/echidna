@@ -20,6 +20,14 @@ server_sources = [
     'src/server/server.cpp'
 ]
 
+client_sources = [
+    'src/client/main.cpp',
+    'src/client/device.cpp',
+    'src/client/clerror.cpp',
+]
+
+add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')
+
 include = include_directories('include')
 
 opencl_dep = dependency('OpenCL')
@@ -35,7 +43,7 @@ executable(
 
 executable(
     'echidna-client',
-    sources + ['src/client/main.cpp'],
+    sources + client_sources,
     install: true,
     build_by_default: false,
     include_directories: include,
