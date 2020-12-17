@@ -11,8 +11,9 @@ namespace echidna::client {
         private:
             std::vector<Device> devices;
 
+            void addDevice(cl_device_id device_id);
         public:
-            Renderer(std::vector<Device>&& devices);
+            explicit Renderer();
     };
 }
 

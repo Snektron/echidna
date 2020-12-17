@@ -5,6 +5,8 @@
 #include <memory>
 #include <utility>
 #include <mutex>
+#include <sstream>
+#include <ctime>
 
 namespace echidna::log {
     struct Sink {
@@ -25,7 +27,8 @@ namespace echidna::log {
             template <typename T, typename... Args>
             void addSink(Args&&... args);
 
-            void write(std::string_view line);
+            template <typename... Args>
+            void write(const Args&... args);
     };
 
     template <typename T, typename... Args>
@@ -33,9 +36,26 @@ namespace echidna::log {
         this->sinks.push_back(std::make_unique<T>(std::forward<Args>(args)...));
     }
 
+    template <typename... Args>
+    void Logger::write(const Args&... args) {
+        auto ss = std::stringstream();
+        std::time_t t = std::time(nullptr);
+        std::tm* local = std::localtime(&t);
+
+        ss << "[" << local->tm_hour << ":" << local->tm_min << ":" << local->tm_sec << "] ";
+        (void) (ss << ... << args);
+        auto msg = ss.str();
+        for (auto& sink : this->sinks) {
+            sink->write(msg);
+        }
+    }
+
     extern Logger LOGGER;
 
-    void write(std::string_view line);
+    template <typename... Args>
+    void write(const Args&... args) {
+        LOGGER.write(args...);
+    }
 }
 
 #endif

@@ -46,21 +46,4 @@ namespace echidna::client {
 
         return devices;
     }
-
-    std::vector<cl_device_id> Device::availableDeviceIDs(cl_device_type mask) {
-        auto devices = deviceIDs();
-        std::string device_version;
-        auto end = std::copy_if(devices.begin(), devices.end(), devices.begin(), [&](cl_device_id device_id) {
-            if (!isDeviceAvailable(device_id))
-                return false;
-
-            auto version = getDeviceVersion(device_id, CL_DEVICE_VERSION);
-            if (version <= std::make_pair<uint32_t, uint32_t>(1, 1))
-                return false;
-
-            return true;
-        });
-        devices.resize(std::distance(devices.begin(), end));
-        return devices;
-    }
 }

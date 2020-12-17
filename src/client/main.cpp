@@ -6,16 +6,17 @@
 #include "client/device.hpp"
 #include "utils/log.hpp"
 
-using echidna::client::Device;
 namespace log = echidna::log;
 
 int main() {
-    log::LOGGER.addSink<echidna::log::ConsoleSink>();
+    log::LOGGER.addSink<log::ConsoleSink>();
 
-    auto device_ids = Device::availableDeviceIDs();
-
-    for (auto device_id : device_ids) {
-        auto device = Device(device_id);
-        log::write(device.name());
+    try {
+        auto renderer = echidna::client::Renderer();
+    } catch (const echidna::client::NoDeviceException& err) {
+        log::write("Failed to initialize any OpenCL device");
+        return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
 }

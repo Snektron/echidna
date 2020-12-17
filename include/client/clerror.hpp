@@ -21,6 +21,11 @@ namespace echidna::client {
         virtual ~InvalidCLVersionStringException() = default;
     };
 
+    struct NoDeviceException : public error::Exception {
+        NoDeviceException() : Exception("No suitable OpenCL devices") {}
+        virtual ~NoDeviceException() = default;
+    };
+
     void check(cl_int status);
 }
 
