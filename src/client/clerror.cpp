@@ -62,6 +62,7 @@ namespace echidna::client {
             case CL_INVALID_COMPILER_OPTIONS: return "invalid compiler options";
             case CL_INVALID_LINKER_OPTIONS: return "invalid linker options";
             case CL_INVALID_DEVICE_PARTITION_COUNT: return "invalid device partition count";
+            case -1001: return "platform icd not loaded"; // Returned by clGetPlatformIDs when there is no loaded implementation
             default: return "(invalid error)";
         }
     }
