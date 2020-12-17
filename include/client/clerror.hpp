@@ -1,3 +1,6 @@
+#ifndef _ECHIDNA_CLIENT_CLERROR_HPP
+#define _ECHIDNA_CLIENT_CLERROR_HPP
+
 #include "error/exception.hpp"
 
 #include <CL/cl.h>
@@ -13,5 +16,12 @@ namespace echidna::client {
         std::string_view errorName(cl_int status);
     };
 
+    struct InvalidCLVersionStringException : public error::Exception {
+        InvalidCLVersionStringException() : Exception() {}
+        virtual ~InvalidCLVersionStringException() = default;
+    };
+
     void check(cl_int status);
 }
+
+#endif
