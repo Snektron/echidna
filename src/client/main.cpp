@@ -4,14 +4,19 @@
 #include "client/clerror.hpp"
 #include "client/renderer.hpp"
 #include "client/device.hpp"
+#include "utils/log.hpp"
 
-using echidna::client::Device;
+namespace log = echidna::log;
 
 int main() {
-    auto device_ids = Device::availableDeviceIDs();
+    log::LOGGER.addSink<log::ConsoleSink>();
 
-    for (auto device_id : device_ids) {
-        auto device = Device(device_id);
-        std::cout << device.name() << std::endl;
+    try {
+        auto renderer = echidna::client::Renderer();
+    } catch (const echidna::client::NoDeviceException& err) {
+        log::write("Failed to initialize any OpenCL device");
+        return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
 }

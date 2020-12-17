@@ -9,8 +9,9 @@ project(
 )
 
 sources = [
+    'src/net/serversocket.cpp',
     'src/net/socket.cpp',
-    'src/net/serversocket.cpp'
+    'src/utils/log.cpp',
 ]
 
 server_sources = [
@@ -20,7 +21,7 @@ server_sources = [
     'src/server/jobqueue.cpp',
     'src/server/main.cpp',
     'src/server/server.cpp',
-    'src/server/task.cpp'
+    'src/server/task.cpp',
 ]
 
 client_sources = [
@@ -28,7 +29,7 @@ client_sources = [
     'src/client/clutil.cpp',
     'src/client/device.cpp',
     'src/client/main.cpp',
-    'src/client/renderer.cpp'
+    'src/client/renderer.cpp',
 ]
 
 add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')

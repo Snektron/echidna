@@ -10,7 +10,7 @@ namespace echidna::client {
     struct CLException : public error::Exception {
         cl_int status;
 
-        CLException(cl_int status) : Exception(errorName(status)) {}
+        CLException(cl_int status) : Exception(errorName(status), " (", status, ")") {}
         virtual ~CLException() = default;
 
         std::string_view errorName(cl_int status);
@@ -19,6 +19,11 @@ namespace echidna::client {
     struct InvalidCLVersionStringException : public error::Exception {
         InvalidCLVersionStringException() : Exception() {}
         virtual ~InvalidCLVersionStringException() = default;
+    };
+
+    struct NoDeviceException : public error::Exception {
+        NoDeviceException() : Exception("No suitable OpenCL devices") {}
+        virtual ~NoDeviceException() = default;
     };
 
     void check(cl_int status);
