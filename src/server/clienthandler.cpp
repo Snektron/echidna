@@ -3,23 +3,42 @@
 
 #include "error/network.hpp"
 
+#include <unordered_set>
+#include <sstream>
+#include <cstring>
+#include <map>
+
 namespace echidna::server {
-    ClientHandler::ClientHandler(std::unique_ptr<net::Socket>&& socket, ClientManager& manager, uint32_t client_id) : socket(std::move(socket)), manager(manager), client_id(client_id) {}
+    struct JobRequest {
+        uint32_t job_id;
+        uint32_t fps;
+        uint32_t image_width;
+        uint32_t image_height;
+        std::string shader;
+        std::vector<uint32_t> frames;
+    };
+
+    ClientHandler::ClientHandler(std::unique_ptr<net::Socket>&& socket, ClientManager& manager, uint32_t client_id) :
+                                        socket(std::move(socket)), manager(manager), client_id(client_id), active(false), keepalive(false), new_jobs(false) {}
     ClientHandler::~ClientHandler() {}
 
     void ClientHandler::run() {
         this->active = true;
         this->active_thread = std::thread(&ClientHandler::handleResponse, this);
+        this->issue_thread = std::thread(&ClientHandler::handleIssue, this);
     }
 
     void ClientHandler::join() {
         this->active_thread.join();
+        this->issue_thread.join();
     }
 
     void ClientHandler::stop() {
         this->active = false;
-
         this->socket->close();
+
+        this->job_update_cond.notify_all();
+        this->keepalive_cond.notify_all();
     }
 
     bool ClientHandler::tryKeepAlive() {
@@ -51,34 +70,98 @@ namespace echidna::server {
             while(this->active) {
                 protocol::ClientPacketID id = this->socket->recv<protocol::ClientPacketID>();
 
-
-
                 switch(id) {
                     case protocol::ClientPacketID::CONNECT:
                         break;
                     case protocol::ClientPacketID::KEEPALIVE: {
-                            std::unique_lock(this->keepalive_mutex);
+                            std::unique_lock lock(this->keepalive_mutex);
                             this->keepalive = true;
                             this->keepalive_cond.notify_all();
                         }
                         break;
-                    case protocol::ClientPacketID::UPDATE_JOB:
-                        //TODO
+                    case protocol::ClientPacketID::UPDATE_JOB: {
+                            uint32_t job_id = this->socket->recv<uint32_t>();
+                            uint32_t frame_id = this->socket->recv<uint32_t>();
+
+                            std::unique_lock lock(this->task_mutex);
+                            for(size_t i = 0; i < this->active_tasks.size(); ++i) {
+                                if(this->active_tasks[i].job == job_id && this->active_tasks[i].frame == frame_id) {
+                                    this->active_tasks.erase(this->active_tasks.begin() + i);
+                                    lock.release();
+
+                                    this->manager.notifyUpdate(job_id, frame_id);
+                                    break;
+                                }
+                            }
+                        }
                         break;
                     case protocol::ClientPacketID::FINISH_JOB:
-                        //TODO
+                        this->manager.notifyFinish(this->client_id);
                         break;
                 }
             }
         }
         catch(const error::NetworkException& e) {
-
         }
+
+        this->manager.returnJobs(this->active_tasks);
 
         this->active = false;
         this->keepalive_cond.notify_all();
 
         this->stop();
+    }
+
+    void ClientHandler::handleIssue() {
+        while(this->active) {
+            {
+                std::unique_lock lock(this->task_mutex);
+                this->job_update_cond.wait(lock, [&] {return this->new_jobs || !this->active;});
+
+                std::map<uint32_t, JobRequest> requests;
+
+                for(size_t i = 0; i < active_tasks.size(); ++i) {
+                    JobRequest& r = requests[this->active_tasks[i].job];
+                    r.job_id = this->active_tasks[i].job;
+                    r.fps = this->active_tasks[i].fps;
+                    r.image_width = this->active_tasks[i].width;
+                    r.image_height = this->active_tasks[i].height;
+                    r.frames.push_back(this->active_tasks[i].frame);
+                }
+
+                for(auto& it : requests) {
+                    uint64_t shader_size = it.second.shader.size();
+                    uint32_t frame_size = it.second.frames.size();
+
+                    size_t packet_size = 5 * sizeof(uint32_t) + sizeof(uint64_t) + shader_size + frame_size * sizeof(uint32_t);
+                    std::unique_ptr<uint8_t[]> packet(new uint8_t[packet_size]);
+                    std::memcpy(&packet[0], &it.second.job_id, sizeof(uint32_t));
+                    std::memcpy(&packet[sizeof(uint32_t)], &it.second.fps, sizeof(uint32_t));
+                    std::memcpy(&packet[2 * sizeof(uint32_t)], &it.second.image_width, sizeof(uint32_t));
+                    std::memcpy(&packet[3 * sizeof(uint32_t)], &it.second.image_height, sizeof(uint32_t));
+                    std::memcpy(&packet[4 * sizeof(uint32_t)], &shader_size, sizeof(uint64_t));
+                    std::memcpy(&packet[4 * sizeof(uint32_t) + sizeof(uint64_t)], it.second.shader.data(), shader_size);
+
+                    size_t packet_offset = 4 * sizeof(uint32_t) + sizeof(uint64_t) + shader_size;
+
+                    std::memcpy(&packet[packet_offset], &frame_size, sizeof(uint32_t));
+
+                    packet_offset += sizeof(uint32_t);
+
+                    for(size_t i = 0; i < frame_size; ++i) {
+                        std::memcpy(&packet[packet_offset], &it.second.frames[i], sizeof(uint32_t));
+                        packet_offset += sizeof(uint32_t);
+                    }
+
+                    if(!this->issueRequest(packet.get(), packet_size)) {
+                        this->manager.returnJobs(this->active_tasks);
+                        this->active_tasks.clear();
+                        this->stop();
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     size_t ClientHandler::getJobCapability() const {
@@ -87,6 +170,9 @@ namespace echidna::server {
     }
 
     void ClientHandler::submitTasks(const std::vector<Task>& tasks) {
+        std::unique_lock lock(this->task_mutex);
+        this->active_tasks = tasks;
 
+        this->job_update_cond.notify_all();
     }
 }

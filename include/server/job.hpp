@@ -23,8 +23,15 @@ namespace echidna::server {
 
             bool hasTasks() const;
             Task getNextTask();
-            void frameRendered();
 
+            template <typename T>
+            void frameRendered(T callback) {
+                uint32_t total_rendered = ++this->frames_rendered;
+
+                if(total_rendered == this->total_frames) {
+                    callback();
+                }
+            }
     };
 }
 

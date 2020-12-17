@@ -13,6 +13,7 @@
 #include <shared_mutex>
 #include <atomic>
 #include <deque>
+#include <condition_variable>
 
 namespace echidna::server {
     class ClientHandler;
@@ -30,7 +31,7 @@ namespace echidna::server {
             std::atomic<bool> active;
             std::shared_mutex client_map_mutex;
             std::mutex free_client_mutex;
-
+            std::condition_variable free_client_cond;
 
             std::atomic<uint32_t> client_id_offset;
             std::unordered_map<uint32_t, ClientHandler*> client_map;
@@ -47,6 +48,10 @@ namespace echidna::server {
             void run();
             void join();
             void stop();
+
+            void notifyUpdate(uint32_t, uint32_t);
+            void notifyFinish(uint32_t);
+            void returnJobs(const std::vector<Task>&);
     };
 }
 

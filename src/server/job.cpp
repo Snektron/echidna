@@ -12,13 +12,4 @@ namespace echidna::server {
     Task Job::getNextTask() {
         return Task(this->shader, this->frames_submitted++, this->fps, this->width, this->height);
     }
-
-    void Job::frameRendered() {
-        uint32_t total_rendered = ++this->frames_rendered;
-        ((void)(total_rendered));
-
-        if(this->frames_rendered == this->total_frames) {
-            //TODO: trigger video callback
-        }
-    }
 }

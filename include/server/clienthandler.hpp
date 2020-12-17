@@ -25,17 +25,22 @@ namespace echidna::server {
             std::vector<Task> active_tasks;
 
             std::thread active_thread;
+            std::thread issue_thread;
             std::mutex send_mutex;
             std::mutex keepalive_mutex;
+            std::mutex task_mutex;
             std::condition_variable keepalive_cond;
+            std::condition_variable job_update_cond;
 
             std::atomic<bool> active;
             std::atomic<bool> keepalive;
+            std::atomic<bool> new_jobs;
 
             protocol::ClientPacketID last_packet;
 
             bool issueRequest(const void*, size_t);
             void handleResponse();
+            void handleIssue();
         public:
             ClientHandler(std::unique_ptr<net::Socket>&&, ClientManager&, uint32_t);
             ~ClientHandler();

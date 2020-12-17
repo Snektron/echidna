@@ -6,11 +6,12 @@
 
 namespace echidna::server {
     struct Task {
-        const std::string shader;
-        const uint32_t frame;
-        const uint32_t fps;
-        const uint32_t width;
-        const uint32_t height;
+        std::string shader;
+        uint32_t frame;
+        uint32_t fps;
+        uint32_t width;
+        uint32_t height;
+        uint32_t job;
 
         Task(const std::string&, uint32_t, uint32_t, uint32_t, uint32_t);
     };
