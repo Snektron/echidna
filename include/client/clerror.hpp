@@ -27,7 +27,8 @@ namespace echidna::client {
     };
 
     struct KernelCompilationException : public error::Exception {
-        KernelCompilationException(std::string_view log) : error::Exception(log) {}
+        template <typename... T>
+        KernelCompilationException(const T&... args) : error::Exception(args...) {}
         virtual ~KernelCompilationException() = default;
     };
 

@@ -11,8 +11,12 @@
 
 namespace echidna::client {
     std::string getDeviceName(cl_device_id device_id);
+
     bool isDeviceAvailable(cl_device_id device_id);
+
     std::pair<uint32_t, uint32_t> getDeviceVersion(cl_device_id device_id, cl_device_info version_info);
+
+    cl_device_type getDeviceType(cl_device_id device_id);
 
     template <typename T, cl_int (*deleter)(T)>
     struct UniqueCLHandle {
@@ -47,7 +51,8 @@ namespace echidna::client {
     using UniqueCommandQueue = UniqueCLHandle<cl_command_queue, clReleaseCommandQueue>;
     using UniqueProgram = UniqueCLHandle<cl_program, clReleaseProgram>;
     using UniqueKernel = UniqueCLHandle<cl_kernel, clReleaseKernel>;
-    using UniqueMem = UniqueCLHandle<cl_mem, clReleaseMemObject>;
+    using UniqueMemObject = UniqueCLHandle<cl_mem, clReleaseMemObject>;
+    using UniqueEvent = UniqueCLHandle<cl_event, clReleaseEvent>;
 
     std::pair<uint32_t, uint32_t> parseVersion(std::string_view version_str);
 }

@@ -7,7 +7,8 @@
 
 namespace echidna::client {
     Device::Device(cl_device_id device_id):
-        device_id(device_id), context(nullptr), command_queue(nullptr)
+        device_id(device_id), type_mask(getDeviceType(device_id)),
+        context(nullptr), command_queue(nullptr)
     {
         cl_int status;
         this->context = clCreateContext(
@@ -22,6 +23,11 @@ namespace echidna::client {
 
         this->command_queue = clCreateCommandQueue(this->context, this->device_id, 0, &status);
         check(status);
+
+        for (size_t i = 0; i < RENDER_OVERLAP; ++i) {
+            this->events.push_back(clCreateUserEvent(this->context, &status));
+            check(status);
+        }
     }
 
     std::string Device::name() const {
@@ -58,14 +64,42 @@ namespace echidna::client {
         auto kernel = UniqueKernel(clCreateKernel(program, kernel_name, &status));
         switch (status) {
             case CL_INVALID_KERNEL_NAME:
-                throw KernelCompilationException("Program does not contain main kernel");
+                throw KernelCompilationException("Program does not contain kernel '", kernel_name, "'");
             case CL_INVALID_KERNEL_DEFINITION:
-                throw KernelCompilationException("Invalid defintion of main kernel");
+                throw KernelCompilationException("Invalid defintion of kernel '", kernel_name, "'");
             default:
                 check(status);
         }
 
         return kernel;
+    }
+
+    UniqueMemObject Device::create2DImage(uint32_t width, uint32_t height, cl_image_format format) {
+        cl_int status;
+        auto desc = cl_image_desc{
+            CL_MEM_OBJECT_IMAGE2D,
+            width,
+            height,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            nullptr
+        };
+
+        auto image = UniqueMemObject(clCreateImage(
+            this->context,
+            CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY,
+            &format,
+            &desc,
+            nullptr,
+            &status
+        ));
+        check(status);
+
+        return image;
     }
 
     std::vector<cl_device_id> Device::deviceIDs(cl_device_type mask) {

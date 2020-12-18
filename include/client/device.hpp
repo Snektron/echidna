@@ -7,19 +7,26 @@
 #include <string>
 #include <vector>
 #include <string_view>
+#include <array>
 
 namespace echidna::client {
+    constexpr const size_t RENDER_OVERLAP = 2;
+
     struct Device {
         cl_device_id device_id;
+        cl_device_type type_mask;
 
         UniqueContext context;
         UniqueCommandQueue command_queue;
+        std::vector<UniqueEvent> events;
 
         Device(cl_device_id device_id);
 
         std::string name() const;
 
         UniqueKernel buildKernelFromSource(std::string_view source, const char* kernel_image);
+
+        UniqueMemObject create2DImage(uint32_t width, uint32_t height, cl_image_format format);
 
         // Return all opencl devices of type `device_mask`.
         static std::vector<cl_device_id> deviceIDs(cl_device_type device_mask = CL_DEVICE_TYPE_ALL);

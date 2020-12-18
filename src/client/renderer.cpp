@@ -4,6 +4,7 @@
 #include "utils/log.hpp"
 
 #include <utility>
+#include <algorithm>
 
 namespace echidna::client {
     void Renderer::addDevice(cl_device_id device_id) {
@@ -56,19 +57,44 @@ namespace echidna::client {
         }
 
         log::write("Initialized ", this->devices.size(), " out of ", device_ids.size(), " device(s)");
+
+        // Make sure GPU devices will get priority
+        std::partition(this->devices.begin(), this->devices.end(), [](const Device& device) {
+            return device.type_mask & CL_DEVICE_TYPE_GPU;
+        });
     }
 
-    RenderTask Renderer::createRenderTask(std::string_view kernel) {
+    Renderer::~Renderer() {
+        this->finishAll();
+    }
+
+    RenderTask Renderer::createRenderTask(RenderTaskInfo task_info) {
         std::vector<DeviceTaskInfo> device_info;
         device_info.reserve(this->devices.size());
 
         for (auto& device : this->devices) {
+            auto kernel = device.buildKernelFromSource(task_info.kernel_source, "render");
+            std::vector<UniqueMemObject> render_targets;
+
+            for (size_t i = 0; i < device.events.size(); ++i) {
+                render_targets.push_back(
+                    device.create2DImage(task_info.image_width, task_info.image_height, RENDER_TARGET_FORMAT)
+                );
+            }
+
             device_info.push_back({
                 &device,
-                device.buildKernelFromSource(kernel, "render"),
+                std::move(kernel),
+                std::move(render_targets),
             });
         }
 
-        return {std::move(device_info)};
+        return {task_info, std::move(device_info)};
+    }
+
+    void Renderer::finishAll() {
+        for (auto& device : this->devices) {
+            check(clFinish(device.command_queue));
+        }
     }
 }

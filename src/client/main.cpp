@@ -13,7 +13,7 @@ int main() {
 
     try {
         auto renderer = echidna::client::Renderer();
-        auto task = renderer.createRenderTask("__kernel void render(){}");
+        // auto task = renderer.createRenderTask("__kernel void render(){}");
     } catch (const echidna::client::NoDeviceException& err) {
         log::write("Failed to initialize any OpenCL device");
         return EXIT_FAILURE;

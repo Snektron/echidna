@@ -24,6 +24,12 @@ namespace echidna::client {
         return parseVersion(version_str);
     }
 
+    cl_device_type getDeviceType(cl_device_id device_id) {
+        cl_device_type type;
+        check(clGetDeviceInfo(device_id, CL_DEVICE_TYPE, sizeof type, &type, nullptr));
+        return type;
+    }
+
     std::pair<uint32_t, uint32_t> parseVersion(std::string_view version_str) {
         auto opencl_prefix = std::string_view("OpenCL ");
         if (version_str.rfind(opencl_prefix) == 0)
