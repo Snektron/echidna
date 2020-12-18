@@ -12,10 +12,17 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
+#include <chrono>
 
 namespace echidna::server {
     class ClientManager;
+
+    const size_t BASE_JOB_CAPABILITY = 64;
+    const size_t MIN_JOB_CAPABILITY = 4;
+    const size_t MAX_JOB_CAPABILITY = 2048;
+    const auto ESTIMATED_JOB_TIMEOUT = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::seconds(2));
 
     class ClientHandler {
         private:
@@ -23,12 +30,17 @@ namespace echidna::server {
             ClientManager& manager;
             uint32_t client_id;
             std::vector<Task> active_tasks;
+            std::atomic<size_t> rendered_frames = 0;
+
+            std::chrono::steady_clock::time_point batch_start;
+            size_t job_capability = BASE_JOB_CAPABILITY;
 
             std::thread active_thread;
             std::thread issue_thread;
             std::mutex send_mutex;
             std::mutex keepalive_mutex;
             std::mutex task_mutex;
+            std::shared_mutex clock_mutex;
             std::condition_variable keepalive_cond;
             std::condition_variable job_update_cond;
 
