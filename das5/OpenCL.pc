@@ -1,6 +1,6 @@
 prefix=/cm/shared/package/intel-opencl/intel/opencl-1.2-16.4/
-libdir=${exec_prefix}/lib64
-includedir=${exec_prefix}/include
+libdir=${prefix}/lib64
+includedir=${prefix}/include
 
 Name: OpenCL
 Description: Open Compute Language DAS5 fix
