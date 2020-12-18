@@ -24,6 +24,12 @@ server_sources = [
     'src/server/task.cpp',
 ]
 
+client_test_sources = [
+    'src/client/client.cpp',
+    'src/client/client_main.cpp',
+    'src/client/renderqueue.cpp'
+]
+
 client_sources = [
     'src/client/clerror.cpp',
     'src/client/clutil.cpp',
@@ -62,4 +68,13 @@ executable(
     install: true,
     build_by_default: false,
     include_directories: include
+)
+
+executable(
+    'echidna-client-test',
+    sources + client_test_sources,
+    install: true,
+    build_by_default: true,
+    include_directories: include,
+    dependencies: dependency('threads')
 )

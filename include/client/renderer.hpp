@@ -3,6 +3,7 @@
 
 #include "client/device.hpp"
 #include "client/clutil.hpp"
+#include "client/rendertask.hpp"
 
 #include <CL/cl.h>
 #include <vector>
@@ -10,14 +11,6 @@
 #include <cstdint>
 
 namespace echidna::client {
-    struct RenderTaskInfo {
-        std::string kernel_source;
-        std::vector<uint32_t> timestamps;
-        uint32_t fps;
-        uint32_t image_width;
-        uint32_t image_height;
-    };
-
     struct DeviceTaskInfo {
         Device* device;
         UniqueKernel kernel;
