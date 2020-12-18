@@ -28,6 +28,46 @@ namespace echidna::client {
         return getDeviceName(this->device_id);
     }
 
+    UniqueKernel Device::buildKernelFromSource(std::string_view source, const char* kernel_name) {
+        // Careful to catch errors caused by an invalid program and unrecoverable errors.
+
+        cl_int status;
+        size_t len = source.size();
+        const char* source_data = source.data();
+        auto program = UniqueProgram(clCreateProgramWithSource(
+            this->context,
+            1,
+            &source_data,
+            &len,
+            &status
+        ));
+        check(status);
+
+        status = clBuildProgram(program, 0, nullptr, nullptr, nullptr, nullptr);
+        if (status == CL_BUILD_PROGRAM_FAILURE) {
+            size_t size;
+            check(clGetProgramBuildInfo(program, this->device_id, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size));
+            std::string msg(size, 0);
+            check(clGetProgramBuildInfo(program, this->device_id, CL_PROGRAM_BUILD_LOG, size, msg.data(), nullptr));
+
+            throw KernelCompilationException(msg);
+        } else {
+            check(status);
+        }
+
+        auto kernel = UniqueKernel(clCreateKernel(program, kernel_name, &status));
+        switch (status) {
+            case CL_INVALID_KERNEL_NAME:
+                throw KernelCompilationException("Program does not contain main kernel");
+            case CL_INVALID_KERNEL_DEFINITION:
+                throw KernelCompilationException("Invalid defintion of main kernel");
+            default:
+                check(status);
+        }
+
+        return kernel;
+    }
+
     std::vector<cl_device_id> Device::deviceIDs(cl_device_type mask) {
         std::vector<cl_device_id> devices;
 

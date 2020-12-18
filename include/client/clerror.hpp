@@ -26,6 +26,11 @@ namespace echidna::client {
         virtual ~NoDeviceException() = default;
     };
 
+    struct KernelCompilationException : public error::Exception {
+        KernelCompilationException(std::string_view log) : error::Exception(log) {}
+        virtual ~KernelCompilationException() = default;
+    };
+
     void check(cl_int status);
 }
 

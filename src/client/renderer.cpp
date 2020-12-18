@@ -57,4 +57,18 @@ namespace echidna::client {
 
         log::write("Initialized ", this->devices.size(), " out of ", device_ids.size(), " device(s)");
     }
+
+    RenderTask Renderer::createRenderTask(std::string_view kernel) {
+        std::vector<DeviceTaskInfo> device_info;
+        device_info.reserve(this->devices.size());
+
+        for (auto& device : this->devices) {
+            device_info.push_back({
+                &device,
+                device.buildKernelFromSource(kernel, "render"),
+            });
+        }
+
+        return {std::move(device_info)};
+    }
 }

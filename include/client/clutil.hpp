@@ -45,6 +45,9 @@ namespace echidna::client {
 
     using UniqueContext = UniqueCLHandle<cl_context, clReleaseContext>;
     using UniqueCommandQueue = UniqueCLHandle<cl_command_queue, clReleaseCommandQueue>;
+    using UniqueProgram = UniqueCLHandle<cl_program, clReleaseProgram>;
+    using UniqueKernel = UniqueCLHandle<cl_kernel, clReleaseKernel>;
+    using UniqueMem = UniqueCLHandle<cl_mem, clReleaseMemObject>;
 
     std::pair<uint32_t, uint32_t> parseVersion(std::string_view version_str);
 }

@@ -24,6 +24,7 @@ $ module load gcc/9.3.0
 ```
 
 ### Compiling the client
+
 Because of some misconfigurations, the OpenCL package config provided by the opencl-intel module cannot be used. Instead, the package config included in the das5/ directory should be used when compiling the client. By default, nodes without a GPU will have the PKG_CONFIG_PATH environment variable overridden to the erroneous OpenCL package config (which will work on CPU nodes, but not on GPU nodes, as that directory is not available on GPU nodes). This package config path needs to be removed:
 ```
 $ unset PKG_CONFIG_PATH
