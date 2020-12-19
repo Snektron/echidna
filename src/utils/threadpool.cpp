@@ -12,6 +12,9 @@ namespace echidna::utils {
     }
 
     ThreadPool::~ThreadPool() {
+        this->drain();
+        this->stop();
+        this->join();
         delete[] this->threads;
     }
 

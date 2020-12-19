@@ -19,12 +19,12 @@ int main() {
     log::LOGGER.addSink<log::ConsoleSink>();
 
     std::vector<uint32_t> timestamps;
-    for (size_t i = 0; i < 1000; ++i) {
+    for (size_t i = 0; i < 10; ++i) {
         timestamps.push_back(i);
     }
 
     try {
-        auto renderer = echidna::client::Renderer();
+        auto renderer = echidna::client::Renderer(4);
         auto task = renderer.createRenderTask({
             kernel,
             timestamps,

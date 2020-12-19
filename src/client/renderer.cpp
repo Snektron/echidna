@@ -2,6 +2,9 @@
 #include "client/clerror.hpp"
 #include "client/clutil.hpp"
 #include "utils/log.hpp"
+#include "utils/string.hpp"
+
+#include <lodepng.h>
 
 #include <utility>
 #include <algorithm>
@@ -46,7 +49,8 @@ namespace echidna::client {
         }
     }
 
-    Renderer::Renderer() {
+    Renderer::Renderer(size_t max_compression_threads):
+        compression_pool(max_compression_threads) {
         auto device_ids = Device::deviceIDs();
 
         for (auto device_id : device_ids) {
@@ -71,14 +75,14 @@ namespace echidna::client {
         for (auto& device : this->devices) {
             auto kernel = device.buildKernelFromSource(task_info.kernel_source, "render");
             std::vector<UniqueMemObject> render_targets;
-            std::vector<std::vector<uint32_t>> host_render_targets;
+            std::vector<std::vector<uint8_t>> host_render_targets;
 
             for (size_t i = 0; i < device.frames.size(); ++i) {
                 render_targets.push_back(
                     device.create2DImage(task_info.image_width, task_info.image_height, RENDER_TARGET_FORMAT)
                 );
 
-                host_render_targets.push_back(std::vector<uint32_t>(task_info.image_width * task_info.image_height));
+                host_render_targets.push_back(std::vector<uint8_t>(4 * task_info.image_width * task_info.image_height));
             }
 
             device_info.push_back({
@@ -96,9 +100,10 @@ namespace echidna::client {
         for (auto timestamp : task.task_info.timestamps) {
             auto [device_index, frame_index] = schedule(task);
             log::write(timestamp, ": launching on device ", device_index, " image ", frame_index);
-            this->launch(task, device_index, frame_index);
+            this->launch(task, device_index, frame_index, timestamp);
         }
         this->finishAll();
+        this->wait(task);
     }
 
     void Renderer::finishAll() {
@@ -126,7 +131,7 @@ namespace echidna::client {
         }
     }
 
-    void Renderer::launch(RenderTask& task, size_t device_index, size_t frame_index) {
+    void Renderer::launch(RenderTask& task, size_t device_index, size_t frame_index, uint32_t timestamp) {
         size_t global_work_size[] = {task.task_info.image_width, task.task_info.image_height};
 
         auto& info = task.device_info[device_index];
@@ -169,18 +174,29 @@ namespace echidna::client {
             frame.target_downloaded.get(),
             CL_COMPLETE,
             &Renderer::targetDownloadedCb,
-            new TargetDownloadedInfo{this, &task, device_index, frame_index}
+            new TargetDownloadedInfo{this, &task, device_index, frame_index, timestamp}
         ));
     }
 
-    void Renderer::targetDownloaded(RenderTask& task, size_t device_index, size_t frame_index) {
-        auto& info = task.device_info[device_index];
-        auto* device = info.device;
-        auto& frame = device->frames[frame_index];
+    void Renderer::targetDownloaded(RenderTask* task, size_t device_index, size_t frame_index, uint32_t timestamp) {
+        this->compression_pool.schedule([=] {
+            auto& device_info = task->device_info[device_index];
+            auto* device = device_info.device;
+            auto& frame = device->frames[frame_index];
 
-        std::lock_guard<std::mutex> lk(this->mutex);
-        frame.ready = true;
-        this->cvar.notify_one();
+            auto filename = utils::string::make_string(task->task_info.job_id, "-", timestamp, ".png");
+            lodepng::encode(
+                filename,
+                device_info.host_render_targets[frame_index].data(),
+                task->task_info.image_width,
+                task->task_info.image_height,
+                LCT_RGBA, 8
+            );
+
+            std::lock_guard<std::mutex> lk(this->mutex);
+            frame.ready = true;
+            this->cvar.notify_one();
+        });
     }
 
     void Renderer::targetDownloadedCb(cl_event event, cl_int status, void* user_data) {
@@ -188,6 +204,24 @@ namespace echidna::client {
             reinterpret_cast<TargetDownloadedInfo*>(user_data)
         );
 
-        info->renderer->targetDownloaded(*info->task, info->device_index, info->frame_index);
+        info->renderer->targetDownloaded(info->task, info->device_index, info->frame_index, info->timestamp);
+    }
+
+    void Renderer::wait(RenderTask& task) {
+        while (true) {
+            std::unique_lock<std::mutex> lk(this->mutex);
+            bool any_unready = false;
+            for (size_t device_index = 0; device_index < task.device_info.size(); ++device_index) {
+                auto& device = this->devices[device_index];
+                for (size_t frame_index = 0; frame_index < device.frames.size(); ++frame_index) {
+                    auto& frame = device.frames[frame_index];
+                    any_unready |= !frame.ready;
+                }
+            }
+
+            if (!any_unready)
+                break;
+            this->cvar.wait(lk);
+        }
     }
 }
