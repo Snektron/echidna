@@ -11,7 +11,9 @@ namespace echidna::utils {
         }
     }
 
-    ThreadPool::~ThreadPool() {}
+    ThreadPool::~ThreadPool() {
+        delete[] this->threads;
+    }
 
     void ThreadPool::threadCallback() {
         while(true) {
