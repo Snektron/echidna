@@ -109,28 +109,20 @@ namespace echidna::client {
 
     std::pair<size_t, size_t> Renderer::schedule(RenderTask& task) {
         while (true) {
-            for (size_t j = 0; j < task.device_info.size(); ++j) {
-                auto& info = task.device_info[j];
-                for (size_t i = 0; i < info.render_targets.size(); ++i) {
-                    if (info.device->frames[i].ready->exchange(false)) {
-                        return {j, i};
-                    }
+            std::unique_lock<std::mutex> lk(this->mutex);
+            for (size_t device_index = 0; device_index < task.device_info.size(); ++device_index) {
+                auto& device = this->devices[device_index];
+                for (size_t frame_index = 0; frame_index < device.frames.size(); ++frame_index) {
+                    auto& frame = device.frames[frame_index];
 
-                    // cl_int event_status = getEventExecutionStatus(info.device->frames[i].target_downloaded.get());
-                    // switch (event_status) {
-                    //     case CL_COMPLETE:
-                    //         return {j, i};
-                    //     case CL_QUEUED:
-                    //     case CL_SUBMITTED:
-                    //     case CL_RUNNING:
-                    //         continue;
-                    //     default:
-                    //         // TODO: This returns an error when the kernel has a problem
-                    //         // and should be handled more appropriately
-                    //         check(event_status);
-                    // }
+                    if (std::exchange(frame.ready, false)) {
+                        return {device_index, frame_index};
+                    }
                 }
             }
+
+            // No frame is ready, wait
+            this->cvar.wait(lk);
         }
     }
 
@@ -176,15 +168,26 @@ namespace echidna::client {
         check(clSetEventCallback(
             frame.target_downloaded.get(),
             CL_COMPLETE,
-            &Renderer::targetDownloaded,
-            reinterpret_cast<void*>(&frame)
+            &Renderer::targetDownloadedCb,
+            new TargetDownloadedInfo{this, &task, device_index, frame_index}
         ));
     }
 
-    void Renderer::targetDownloaded(cl_event event, cl_int status, void* user_data) {
-        auto* frame = reinterpret_cast<Frame*>(user_data);
-        std::cout << "Downloaded" << std::endl;
-        std::cout.flush();
-        *frame->ready = true;
+    void Renderer::targetDownloaded(RenderTask& task, size_t device_index, size_t frame_index) {
+        auto& info = task.device_info[device_index];
+        auto* device = info.device;
+        auto& frame = device->frames[frame_index];
+
+        std::lock_guard<std::mutex> lk(this->mutex);
+        frame.ready = true;
+        this->cvar.notify_one();
+    }
+
+    void Renderer::targetDownloadedCb(cl_event event, cl_int status, void* user_data) {
+        auto info = std::unique_ptr<TargetDownloadedInfo>(
+            reinterpret_cast<TargetDownloadedInfo*>(user_data)
+        );
+
+        info->renderer->targetDownloaded(*info->task, info->device_index, info->frame_index);
     }
 }

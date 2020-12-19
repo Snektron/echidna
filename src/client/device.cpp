@@ -9,7 +9,7 @@ namespace echidna::client {
     Frame::Frame(cl_context context):
         kernel_completed(createEvent(context, CL_COMPLETE)),
         target_downloaded(createEvent(context, CL_COMPLETE)),
-        ready(std::make_unique<std::atomic_bool>(true)) {}
+        ready(true) {}
 
     Device::Device(cl_device_id device_id):
         device_id(device_id), type_mask(getDeviceType(device_id)),

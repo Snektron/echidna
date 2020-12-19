@@ -30,12 +30,18 @@ namespace echidna::client {
 
             std::vector<Device> devices;
             std::mutex mutex;
-            std::condition_variable;
+            std::condition_variable cvar;
 
             void addDevice(cl_device_id device_id);
         public:
             explicit Renderer();
             ~Renderer();
+
+            Renderer(const Renderer&) = delete;
+            Renderer(Renderer&&) = delete;
+
+            Renderer& operator=(const Renderer&) = delete;
+            Renderer& operator=(Renderer&&) = delete;
 
             RenderTask createRenderTask(RenderTaskInfo task_info);
 
@@ -48,7 +54,16 @@ namespace echidna::client {
 
             void launch(RenderTask& task, size_t device_index, size_t frame_index);
 
-            static void targetDownloaded(cl_event event, cl_int status, void* user_data);
+            void targetDownloaded(RenderTask& task, size_t device_index, size_t frame_index);
+
+            static void targetDownloadedCb(cl_event event, cl_int status, void* user_data);
+    };
+
+    struct TargetDownloadedInfo {
+        Renderer* renderer;
+        RenderTask* task;
+        size_t device_index;
+        size_t frame_index;
     };
 }
 
