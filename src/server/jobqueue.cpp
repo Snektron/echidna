@@ -22,6 +22,8 @@ namespace echidna::server {
         for(const Task& t : tasks) {
             this->task_queue.push_back(t);
         }
+
+        this->job_wait.notify_all();
     }
 
     std::vector<Task> JobQueue::getJobs(size_t max_jobs) {

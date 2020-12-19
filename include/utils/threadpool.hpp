@@ -35,6 +35,7 @@ namespace echidna::utils {
 
             void stop();
             void join();
+            void drain();
     };
 }
 

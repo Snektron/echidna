@@ -18,6 +18,7 @@ sources = [
 server_sources = [
     'src/server/clienthandler.cpp',
     'src/server/clientmanager.cpp',
+    'src/server/climanager.cpp',
     'src/server/job.cpp',
     'src/server/jobqueue.cpp',
     'src/server/main.cpp',

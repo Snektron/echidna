@@ -43,4 +43,10 @@ namespace echidna::utils {
 
         this->job_queue_var.notify_all();
     }
+
+    void ThreadPool::drain() {
+        std::unique_lock lock(this->job_queue_mut);
+
+        this->job_queue_var.wait(lock, [&] {return this->job_queue.size() == 0;});
+    }
 }
