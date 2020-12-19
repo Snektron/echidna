@@ -18,7 +18,22 @@ namespace echidna::client {
             ~RenderQueue();
 
             void addTask(const RenderTaskInfo&);
-            RenderTaskInfo getTask();
+
+            template <typename F>
+            RenderTaskInfo getTask(F job_request_callback) {
+                std::unique_lock lock(this->queue_mutex);
+                this->queue_var.wait(lock, [&] {return this->render_queue.size() > 0;});
+
+                RenderTaskInfo result = this->render_queue.front();
+                this->render_queue.pop_front();
+
+                if(this->render_queue.size() == 0) {
+                    lock.unlock();
+
+                    job_request_callback();
+                }
+                return result;
+            }
     };
 }
 

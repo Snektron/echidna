@@ -2,6 +2,7 @@
 #include "client/rendertask.hpp"
 #include "client/renderqueue.hpp"
 #include "error/network.hpp"
+#include "error/clientexception.hpp"
 #include "protocol/packet.hpp"
 
 #include <cstring>
@@ -120,5 +121,14 @@ namespace echidna::client {
         this->send_queue.push_back(ClientPacket{job_id, frame_id});
 
         this->send_queue_cond.notify_all();
+    }
+
+    void Client::requestMoreJobs() {
+        uint8_t data = static_cast<uint8_t>(protocol::ClientPacketID::FINISH_JOB);
+
+        if(!this->issueRequest(&data, sizeof(uint8_t))) {
+            this->stop();
+            throw error::NoJobsAvailableException("Failed to send a request for more jobs to the client");
+        }
     }
 }

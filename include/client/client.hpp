@@ -46,6 +46,7 @@ namespace echidna::client {
             void stop();
 
             void updateServer(uint32_t, uint32_t);
+            void requestMoreJobs();
     };
 }
 
