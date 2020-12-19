@@ -82,7 +82,7 @@ namespace echidna::client {
                     device.create2DImage(task_info.image_width, task_info.image_height, RENDER_TARGET_FORMAT)
                 );
 
-                host_render_targets.push_back(std::vector<uint8_t>(4 * task_info.image_width * task_info.image_height));
+                host_render_targets.push_back(std::vector<uint8_t>(4 * task_info.image_width * task_info.image_height, 0xAA));
             }
 
             device_info.push_back({

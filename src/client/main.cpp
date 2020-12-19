@@ -11,7 +11,7 @@ namespace log = echidna::log;
 auto kernel = R"(
 kernel void render(write_only image2d_t target) {
     int2 coords = (int2)(get_global_id(0), get_global_id(1));
-    write_imageui(target, coords, (uint4)(255, 0, 255, 255));
+    write_imagef(target, coords, (float4)(1, 0, 1, 1));
 }
 )";
 
@@ -24,7 +24,7 @@ int main() {
     }
 
     try {
-        auto renderer = echidna::client::Renderer(4);
+        auto renderer = echidna::client::Renderer(8);
         auto task = renderer.createRenderTask({
             kernel,
             timestamps,
