@@ -75,29 +75,34 @@ namespace echidna::client {
         for (auto& device : this->devices) {
             auto kernel = device.buildKernelFromSource(task_info.kernel_source, "render");
             std::vector<UniqueMemObject> render_targets;
+            std::vector<std::vector<uint32_t>> host_render_targets;
 
-            for (size_t i = 0; i < device.events.size(); ++i) {
+            for (size_t i = 0; i < device.frames.size(); ++i) {
                 render_targets.push_back(
                     device.create2DImage(task_info.image_width, task_info.image_height, RENDER_TARGET_FORMAT)
                 );
+
+                host_render_targets.push_back(std::vector<uint32_t>(task_info.image_width * task_info.image_height));
             }
 
             device_info.push_back({
                 &device,
                 std::move(kernel),
                 std::move(render_targets),
+                std::move(host_render_targets),
             });
         }
 
         return {task_info, std::move(device_info)};
     }
 
-    void Renderer::runUntilCompletion(const RenderTask& task) {
+    void Renderer::runUntilCompletion(RenderTask& task) {
         for (auto timestamp : task.task_info.timestamps) {
-            auto [device_index, image_index] = schedule(task);
-            log::write(timestamp, ": launching on device ", device_index, " image ", image_index);
-            this->launch(task, device_index, image_index);
+            auto [device_index, frame_index] = schedule(task);
+            log::write(timestamp, ": launching on device ", device_index, " image ", frame_index);
+            this->launch(task, device_index, frame_index);
         }
+        this->finishAll();
     }
 
     void Renderer::finishAll() {
@@ -106,12 +111,12 @@ namespace echidna::client {
         }
     }
 
-    std::pair<size_t, size_t> Renderer::schedule(const RenderTask& task) {
+    std::pair<size_t, size_t> Renderer::schedule(RenderTask& task) {
         while (true) {
             for (size_t j = 0; j < task.device_info.size(); ++j) {
                 auto& info = task.device_info[j];
                 for (size_t i = 0; i < info.render_targets.size(); ++i) {
-                    cl_int event_status = getEventExecutionStatus(info.device->events[i]);
+                    cl_int event_status = getEventExecutionStatus(info.device->frames[i].target_downloaded);
                     switch (event_status) {
                         case CL_COMPLETE:
                             return {j, i};
@@ -129,14 +134,15 @@ namespace echidna::client {
         }
     }
 
-    void Renderer::launch(const RenderTask& task, size_t device_index, size_t image_index) {
+    void Renderer::launch(RenderTask& task, size_t device_index, size_t frame_index) {
         size_t global_work_size[] = {task.task_info.image_width, task.task_info.image_height};
 
         auto& info = task.device_info[device_index];
         auto* device = info.device;
-        auto& image = info.render_targets[image_index];
+        auto& render_target = info.render_targets[frame_index];
+        auto& host_render_target = info.host_render_targets[frame_index];
 
-        check(clSetKernelArg(info.kernel, 0, sizeof(cl_mem), &image));
+        check(clSetKernelArg(info.kernel, 0, sizeof(cl_mem), &render_target.get()));
         check(clEnqueueNDRangeKernel(
             device->command_queue,
             info.kernel,
@@ -146,7 +152,24 @@ namespace echidna::client {
             nullptr,
             0,
             nullptr,
-            &static_cast<cl_event&>(device->events[image_index])
+            &device->frames[frame_index].kernel_completed.get()
+        ));
+
+        size_t origin[] = {0, 0, 0};
+        size_t region[] = {task.task_info.image_width, task.task_info.image_height, 1};
+
+        check(clEnqueueReadImage(
+            device->command_queue,
+            render_target.get(),
+            CL_FALSE,
+            origin,
+            region,
+            0,
+            0,
+            host_render_target.data(),
+            1,
+            &device->frames[frame_index].kernel_completed.get(),
+            &device->frames[frame_index].target_downloaded.get()
         ));
     }
 }

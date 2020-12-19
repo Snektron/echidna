@@ -36,6 +36,14 @@ namespace echidna::client {
         return event_status;
     }
 
+    UniqueEvent createEvent(cl_context context, cl_int initial_status) {
+        cl_int status;
+        auto event = UniqueEvent(clCreateUserEvent(context, &status));
+        check(status);
+        check(clSetUserEventStatus(event, initial_status));
+        return event;
+    }
+
     std::pair<uint32_t, uint32_t> parseVersion(std::string_view version_str) {
         auto opencl_prefix = std::string_view("OpenCL ");
         if (version_str.rfind(opencl_prefix) == 0)

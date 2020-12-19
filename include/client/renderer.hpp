@@ -15,6 +15,7 @@ namespace echidna::client {
         Device* device;
         UniqueKernel kernel;
         std::vector<UniqueMemObject> render_targets;
+        std::vector<std::vector<uint32_t>> host_render_targets;
     };
 
     struct RenderTask {
@@ -35,13 +36,14 @@ namespace echidna::client {
 
             RenderTask createRenderTask(RenderTaskInfo task_info);
 
-            void runUntilCompletion(const RenderTask& task);
+            void runUntilCompletion(RenderTask& task);
 
             void finishAll();
 
         private:
-            std::pair<size_t, size_t> schedule(const RenderTask& task);
-            void launch(const RenderTask& task, size_t device_index, size_t image_index);
+            std::pair<size_t, size_t> schedule(RenderTask& task);
+
+            void launch(RenderTask& task, size_t device_index, size_t frame_index);
     };
 }
 

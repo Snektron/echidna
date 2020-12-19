@@ -25,10 +25,10 @@ namespace echidna::client {
         check(status);
 
         for (size_t i = 0; i < RENDER_OVERLAP; ++i) {
-            auto event = UniqueEvent(clCreateUserEvent(this->context, &status));
-            check(status);
-            check(clSetUserEventStatus(event, CL_COMPLETE));
-            this->events.push_back(std::move(event));
+            this->frames.push_back({
+                createEvent(this->context, CL_COMPLETE),
+                createEvent(this->context, CL_COMPLETE),
+            });
         }
     }
 

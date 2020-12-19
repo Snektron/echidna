@@ -12,13 +12,18 @@
 namespace echidna::client {
     constexpr const size_t RENDER_OVERLAP = 2;
 
+    struct Frame {
+        UniqueEvent kernel_completed;
+        UniqueEvent target_downloaded;
+    };
+
     struct Device {
         cl_device_id device_id;
         cl_device_type type_mask;
 
         UniqueContext context;
         UniqueCommandQueue command_queue;
-        std::vector<UniqueEvent> events;
+        std::vector<Frame> frames;
 
         Device(cl_device_id device_id);
 

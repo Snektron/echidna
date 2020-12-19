@@ -10,16 +10,6 @@
 #include <cstdint>
 
 namespace echidna::client {
-    std::string getDeviceName(cl_device_id device_id);
-
-    bool isDeviceAvailable(cl_device_id device_id);
-
-    std::pair<uint32_t, uint32_t> getDeviceVersion(cl_device_id device_id, cl_device_info version_info);
-
-    cl_device_type getDeviceType(cl_device_id device_id);
-
-    cl_int getEventExecutionStatus(cl_event event);
-
     template <typename T, cl_int (*deleter)(T)>
     struct UniqueCLHandle {
         T handle;
@@ -51,6 +41,14 @@ namespace echidna::client {
         operator const T&() const {
             return this->handle;
         }
+
+        T& get() {
+            return this->handle;
+        }
+
+        const T& get() const {
+            return this->handle;
+        }
     };
 
     using UniqueContext = UniqueCLHandle<cl_context, clReleaseContext>;
@@ -59,6 +57,18 @@ namespace echidna::client {
     using UniqueKernel = UniqueCLHandle<cl_kernel, clReleaseKernel>;
     using UniqueMemObject = UniqueCLHandle<cl_mem, clReleaseMemObject>;
     using UniqueEvent = UniqueCLHandle<cl_event, clReleaseEvent>;
+
+    std::string getDeviceName(cl_device_id device_id);
+
+    bool isDeviceAvailable(cl_device_id device_id);
+
+    std::pair<uint32_t, uint32_t> getDeviceVersion(cl_device_id device_id, cl_device_info version_info);
+
+    cl_device_type getDeviceType(cl_device_id device_id);
+
+    cl_int getEventExecutionStatus(cl_event event);
+
+    UniqueEvent createEvent(cl_context context, cl_int initial_status);
 
     std::pair<uint32_t, uint32_t> parseVersion(std::string_view version_str);
 }
