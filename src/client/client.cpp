@@ -119,5 +119,7 @@ namespace echidna::client {
     void Client::updateServer(uint32_t job_id, uint32_t frame_id) {
         std::unique_lock lock(this->send_queue_mutex);
         this->send_queue.push_back(ClientPacket{job_id, frame_id});
+
+        this->send_queue_cond.notify_all();
     }
 }
