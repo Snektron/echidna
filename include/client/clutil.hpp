@@ -34,14 +34,6 @@ namespace echidna::client {
             }
         }
 
-        operator T&() {
-            return this->handle;
-        }
-
-        operator const T&() const {
-            return this->handle;
-        }
-
         T& get() {
             return this->handle;
         }

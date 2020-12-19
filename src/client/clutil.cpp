@@ -40,7 +40,7 @@ namespace echidna::client {
         cl_int status;
         auto event = UniqueEvent(clCreateUserEvent(context, &status));
         check(status);
-        check(clSetUserEventStatus(event, initial_status));
+        check(clSetUserEventStatus(event.get(), initial_status));
         return event;
     }
 

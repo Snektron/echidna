@@ -57,11 +57,6 @@ namespace echidna::client {
         }
 
         log::write("Initialized ", this->devices.size(), " out of ", device_ids.size(), " device(s)");
-
-        // Make sure GPU devices will get priority
-        std::partition(this->devices.begin(), this->devices.end(), [](const Device& device) {
-            return device.type_mask & CL_DEVICE_TYPE_GPU;
-        });
     }
 
     Renderer::~Renderer() {
@@ -107,7 +102,7 @@ namespace echidna::client {
 
     void Renderer::finishAll() {
         for (auto& device : this->devices) {
-            check(clFinish(device.command_queue));
+            check(clFinish(device.command_queue.get()));
         }
     }
 
@@ -116,7 +111,7 @@ namespace echidna::client {
             for (size_t j = 0; j < task.device_info.size(); ++j) {
                 auto& info = task.device_info[j];
                 for (size_t i = 0; i < info.render_targets.size(); ++i) {
-                    cl_int event_status = getEventExecutionStatus(info.device->frames[i].target_downloaded);
+                    cl_int event_status = getEventExecutionStatus(info.device->frames[i].target_downloaded.get());
                     switch (event_status) {
                         case CL_COMPLETE:
                             return {j, i};
@@ -142,10 +137,10 @@ namespace echidna::client {
         auto& render_target = info.render_targets[frame_index];
         auto& host_render_target = info.host_render_targets[frame_index];
 
-        check(clSetKernelArg(info.kernel, 0, sizeof(cl_mem), &render_target.get()));
+        check(clSetKernelArg(info.kernel.get(), 0, sizeof(cl_mem), &render_target.get()));
         check(clEnqueueNDRangeKernel(
-            device->command_queue,
-            info.kernel,
+            device->command_queue.get(),
+            info.kernel.get(),
             2,
             nullptr,
             global_work_size,
@@ -159,7 +154,7 @@ namespace echidna::client {
         size_t region[] = {task.task_info.image_width, task.task_info.image_height, 1};
 
         check(clEnqueueReadImage(
-            device->command_queue,
+            device->command_queue.get(),
             render_target.get(),
             CL_FALSE,
             origin,
