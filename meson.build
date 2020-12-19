@@ -12,6 +12,7 @@ sources = [
     'src/net/serversocket.cpp',
     'src/net/socket.cpp',
     'src/utils/log.cpp',
+    'src/utils/threadpool.cpp'
 ]
 
 server_sources = [

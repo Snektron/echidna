@@ -1,13 +1,21 @@
-#include "client/client.hpp"
-#include "client/renderqueue.hpp"
+#include "utils/threadpool.hpp"
+
+#include <iostream>
 
 int main() {
-    echidna::client::RenderQueue queue;
-    echidna::client::Client client("localhost", 80, queue);
+    echidna::utils::ThreadPool pool(8);
 
-    client.start();
+    std::atomic<size_t> result = 0;
+    for(size_t i = 0; i < 100; ++i) {
+        pool.schedule([&result, i] {
+            result += i;
+        });
+    }
 
-    client.join();
+    pool.stop();
+    pool.join();
+
+    std::cout << "Sum: " << result << std::endl;
 
     return 0;
 }

@@ -99,7 +99,7 @@ namespace echidna::client {
 
                     this->send_queue.clear();
 
-                    lock.release();
+                    lock.unlock();
 
                     if(!this->issueRequest(request.get(), request_size)) {
                         this->stop();

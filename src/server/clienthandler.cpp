@@ -90,7 +90,7 @@ namespace echidna::server {
                                 for(size_t i = 0; i < this->active_tasks.size(); ++i) {
                                     if(this->active_tasks[i].job == job_id && this->active_tasks[i].frame == frame_id) {
                                         this->active_tasks.erase(this->active_tasks.begin() + i);
-                                        lock.release();
+                                        lock.unlock();
 
                                         this->manager.notifyUpdate(job_id, frame_id);
                                         break;

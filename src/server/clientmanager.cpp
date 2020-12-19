@@ -127,7 +127,7 @@ namespace echidna::server {
             {
                 std::shared_lock client_map_lock(this->client_map_mutex);
                 if(this->client_map.count(free_client_id) == 0) {
-                    client_map_lock.release();
+                    client_map_lock.unlock();
                     this->job_queue.addTasks(tasks);
                     continue;
                 }
