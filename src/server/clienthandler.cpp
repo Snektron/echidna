@@ -80,18 +80,21 @@ namespace echidna::server {
                         }
                         break;
                     case protocol::ClientPacketID::UPDATE_JOB: {
-                            uint32_t job_id = this->socket->recv<uint32_t>();
-                            uint32_t frame_id = this->socket->recv<uint32_t>();
+                            uint32_t num_updates = this->socket->recv<uint32_t>();
+                            for(uint32_t j = 0; j < num_updates; ++j) {
+                                uint32_t job_id = this->socket->recv<uint32_t>();
+                                uint32_t frame_id = this->socket->recv<uint32_t>();
 
-                            std::unique_lock lock(this->task_mutex);
-                            ++this->rendered_frames;
-                            for(size_t i = 0; i < this->active_tasks.size(); ++i) {
-                                if(this->active_tasks[i].job == job_id && this->active_tasks[i].frame == frame_id) {
-                                    this->active_tasks.erase(this->active_tasks.begin() + i);
-                                    lock.release();
+                                std::unique_lock lock(this->task_mutex);
+                                ++this->rendered_frames;
+                                for(size_t i = 0; i < this->active_tasks.size(); ++i) {
+                                    if(this->active_tasks[i].job == job_id && this->active_tasks[i].frame == frame_id) {
+                                        this->active_tasks.erase(this->active_tasks.begin() + i);
+                                        lock.release();
 
-                                    this->manager.notifyUpdate(job_id, frame_id);
-                                    break;
+                                        this->manager.notifyUpdate(job_id, frame_id);
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -162,16 +165,17 @@ namespace echidna::server {
                     uint64_t shader_size = it.second.shader.size();
                     uint32_t frame_size = it.second.frames.size();
 
-                    size_t packet_size = 5 * sizeof(uint32_t) + sizeof(uint64_t) + shader_size + frame_size * sizeof(uint32_t);
+                    size_t packet_size = 1 + 5 * sizeof(uint32_t) + sizeof(uint64_t) + shader_size + frame_size * sizeof(uint32_t);
                     std::unique_ptr<uint8_t[]> packet(new uint8_t[packet_size]);
-                    std::memcpy(&packet[0], &it.second.job_id, sizeof(uint32_t));
-                    std::memcpy(&packet[sizeof(uint32_t)], &it.second.fps, sizeof(uint32_t));
-                    std::memcpy(&packet[2 * sizeof(uint32_t)], &it.second.image_width, sizeof(uint32_t));
-                    std::memcpy(&packet[3 * sizeof(uint32_t)], &it.second.image_height, sizeof(uint32_t));
-                    std::memcpy(&packet[4 * sizeof(uint32_t)], &shader_size, sizeof(uint64_t));
-                    std::memcpy(&packet[4 * sizeof(uint32_t) + sizeof(uint64_t)], it.second.shader.data(), shader_size);
+                    packet[0] = static_cast<uint8_t>(protocol::ServerPacketID::ISSUE_JOB);
+                    std::memcpy(&packet[1], &it.second.job_id, sizeof(uint32_t));
+                    std::memcpy(&packet[1 + sizeof(uint32_t)], &it.second.fps, sizeof(uint32_t));
+                    std::memcpy(&packet[1 + 2 * sizeof(uint32_t)], &it.second.image_width, sizeof(uint32_t));
+                    std::memcpy(&packet[1 + 3 * sizeof(uint32_t)], &it.second.image_height, sizeof(uint32_t));
+                    std::memcpy(&packet[1 + 4 * sizeof(uint32_t)], &shader_size, sizeof(uint64_t));
+                    std::memcpy(&packet[1 + 4 * sizeof(uint32_t) + sizeof(uint64_t)], it.second.shader.data(), shader_size);
 
-                    size_t packet_offset = 4 * sizeof(uint32_t) + sizeof(uint64_t) + shader_size;
+                    size_t packet_offset = 1 + 4 * sizeof(uint32_t) + sizeof(uint64_t) + shader_size;
 
                     std::memcpy(&packet[packet_offset], &frame_size, sizeof(uint32_t));
 

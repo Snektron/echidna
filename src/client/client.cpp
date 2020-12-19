@@ -4,6 +4,8 @@
 #include "error/network.hpp"
 #include "protocol/packet.hpp"
 
+#include <cstring>
+
 namespace echidna::client {
     Client::Client(const std::string& host, int host_port, RenderQueue& queue) : render_queue(queue) {
         this->socket.connect(host, host_port);
@@ -16,6 +18,7 @@ namespace echidna::client {
     void Client::start() {
         this->active = true;
         this->recv_thread = std::thread(&Client::handleRecv, this);
+        this->send_thread = std::thread(&Client::handleUpdate, this);
     }
 
     void Client::join() {
@@ -75,5 +78,46 @@ namespace echidna::client {
         }
 
         this->stop();
+    }
+
+    void Client::handleUpdate() {
+        try {
+            while(this->active) {
+                std::unique_lock lock(this->send_queue_mutex);
+                this->send_queue_cond.wait(lock, [&] {return this->send_queue.size() > 0 || !this->active;});
+                if(this->send_queue.size() > 0) {
+                    size_t request_size = 1 + sizeof(uint32_t) * (2 * this->send_queue.size() + 1);
+                    std::unique_ptr<uint8_t[]> request(new uint8_t[1 + sizeof(uint32_t) * (2 * this->send_queue.size() + 1)]);
+                    uint32_t send_queue_size = this->send_queue.size();
+                    request[0] = static_cast<uint8_t>(protocol::ClientPacketID::UPDATE_JOB);
+                    std::memcpy(&request[1], &send_queue_size, sizeof(uint32_t));
+
+                    for(size_t i = 0; i < send_queue_size; ++i) {
+                        std::memcpy(&request[1 + i * sizeof(uint32_t)], &this->send_queue[i], sizeof(uint32_t));
+                    }
+
+                    lock.release();
+
+                    if(!this->issueRequest(request.get(), request_size)) {
+                        this->stop();
+
+                        //TODO: log
+                    }
+
+                    lock.lock();
+
+                    this->send_queue.clear();
+                }
+            }
+        }
+        catch(const error::NetworkException& e) {
+            //TODO: log this
+        }
+        this->stop();
+    }
+
+    void Client::updateServer(uint32_t job_id, uint32_t frame_id) {
+        std::unique_lock lock(this->send_queue_mutex);
+        this->send_queue.push_back(ClientPacket{job_id, frame_id});
     }
 }
