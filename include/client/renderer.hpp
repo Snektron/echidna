@@ -38,6 +38,10 @@ namespace echidna::client {
             void runUntilCompletion(const RenderTask& task);
 
             void finishAll();
+
+        private:
+            std::pair<size_t, size_t> schedule(const RenderTask& task);
+            void launch(const RenderTask& task, size_t device_index, size_t image_index);
     };
 }
 

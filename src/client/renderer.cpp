@@ -93,53 +93,10 @@ namespace echidna::client {
     }
 
     void Renderer::runUntilCompletion(const RenderTask& task) {
-        size_t global_work_size[] = {task.task_info.image_width, task.task_info.image_height};
-
-        auto launch = [&](const DeviceTaskInfo& device_info, size_t image_index) {
-            auto* device = device_info.device;
-            auto& image = device_info.render_targets[image_index];
-
-            check(clSetKernelArg(device_info.kernel, 0, sizeof(cl_mem), &image));
-            check(clEnqueueNDRangeKernel(
-                device->command_queue,
-                device_info.kernel,
-                2,
-                nullptr,
-                global_work_size,
-                nullptr,
-                0,
-                nullptr,
-                &static_cast<cl_event&>(device->events[image_index])
-            ));
-        };
-
-        auto trySchedule = [&]() -> std::pair<size_t, size_t> {
-            while (true) {
-                for (size_t j = 0; j < task.device_info.size(); ++j) {
-                    auto& info = task.device_info[j];
-                    for (size_t i = 0; i < info.render_targets.size(); ++i) {
-                        cl_int event_status = getEventExecutionStatus(info.device->events[i]);
-                        switch (event_status) {
-                            case CL_COMPLETE:
-                                return {j, i};
-                            case CL_QUEUED:
-                            case CL_SUBMITTED:
-                            case CL_RUNNING:
-                                continue;
-                            default:
-                                // TODO: This returns an error when the kernel has a problem
-                                // and should be handled more appropriately
-                                check(event_status);
-                        }
-                    }
-                }
-            }
-        };
-
         for (auto timestamp : task.task_info.timestamps) {
-            auto [device_index, image_index] = trySchedule();
+            auto [device_index, image_index] = schedule(task);
             log::write(timestamp, ": launching on device ", device_index, " image ", image_index);
-            launch(task.device_info[device_index], image_index);
+            this->launch(task, device_index, image_index);
         }
     }
 
@@ -147,5 +104,49 @@ namespace echidna::client {
         for (auto& device : this->devices) {
             check(clFinish(device.command_queue));
         }
+    }
+
+    std::pair<size_t, size_t> Renderer::schedule(const RenderTask& task) {
+        while (true) {
+            for (size_t j = 0; j < task.device_info.size(); ++j) {
+                auto& info = task.device_info[j];
+                for (size_t i = 0; i < info.render_targets.size(); ++i) {
+                    cl_int event_status = getEventExecutionStatus(info.device->events[i]);
+                    switch (event_status) {
+                        case CL_COMPLETE:
+                            return {j, i};
+                        case CL_QUEUED:
+                        case CL_SUBMITTED:
+                        case CL_RUNNING:
+                            continue;
+                        default:
+                            // TODO: This returns an error when the kernel has a problem
+                            // and should be handled more appropriately
+                            check(event_status);
+                    }
+                }
+            }
+        }
+    }
+
+    void Renderer::launch(const RenderTask& task, size_t device_index, size_t image_index) {
+        size_t global_work_size[] = {task.task_info.image_width, task.task_info.image_height};
+
+        auto& info = task.device_info[device_index];
+        auto* device = info.device;
+        auto& image = info.render_targets[image_index];
+
+        check(clSetKernelArg(info.kernel, 0, sizeof(cl_mem), &image));
+        check(clEnqueueNDRangeKernel(
+            device->command_queue,
+            info.kernel,
+            2,
+            nullptr,
+            global_work_size,
+            nullptr,
+            0,
+            nullptr,
+            &static_cast<cl_event&>(device->events[image_index])
+        ));
     }
 }
