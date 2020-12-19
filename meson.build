@@ -25,18 +25,14 @@ server_sources = [
     'src/server/task.cpp',
 ]
 
-client_test_sources = [
-    'src/client/client.cpp',
-    'src/client/client_main.cpp',
-    'src/client/renderqueue.cpp'
-]
-
 client_sources = [
     'src/client/clerror.cpp',
+    'src/client/client.cpp',
     'src/client/clutil.cpp',
     'src/client/device.cpp',
     'src/client/main.cpp',
     'src/client/renderer.cpp',
+    'src/client/renderqueue.cpp'
 ]
 
 add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')
@@ -72,13 +68,4 @@ executable(
     install: true,
     build_by_default: false,
     include_directories: include
-)
-
-executable(
-    'echidna-client-test',
-    sources + client_test_sources,
-    install: true,
-    build_by_default: true,
-    include_directories: include,
-    dependencies: dependency('threads')
 )
