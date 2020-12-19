@@ -10,7 +10,7 @@
 #include <array>
 
 namespace echidna::client {
-    constexpr const size_t RENDER_OVERLAP = 2;
+    constexpr const size_t FRAMES = 2;
 
     struct Frame {
         UniqueEvent kernel_completed;

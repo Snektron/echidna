@@ -43,7 +43,10 @@ add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')
 
 include = include_directories('include')
 
-opencl_dep = dependency('OpenCL')
+client_deps = [
+    dependency('OpenCL'),
+    subproject('lodepng').get_variable('lodepng_dep'),
+]
 
 executable(
     'echidna-server',
@@ -60,7 +63,7 @@ executable(
     install: true,
     build_by_default: false,
     include_directories: include,
-    dependencies: opencl_dep
+    dependencies: client_deps
 )
 
 executable(

@@ -21,13 +21,13 @@ namespace echidna::client {
         ));
         check(status);
 
-        this->command_queue = UniqueCommandQueue(clCreateCommandQueue(this->context, this->device_id, 0, &status));
+        this->command_queue = UniqueCommandQueue(clCreateCommandQueue(this->context.get(), this->device_id, 0, &status));
         check(status);
 
-        for (size_t i = 0; i < RENDER_OVERLAP; ++i) {
+        for (size_t i = 0; i < FRAMES; ++i) {
             this->frames.push_back({
-                createEvent(this->context, CL_COMPLETE),
-                createEvent(this->context, CL_COMPLETE),
+                createEvent(this->context.get(), CL_COMPLETE),
+                createEvent(this->context.get(), CL_COMPLETE),
             });
         }
     }
@@ -43,7 +43,7 @@ namespace echidna::client {
         size_t len = source.size();
         const char* source_data = source.data();
         auto program = UniqueProgram(clCreateProgramWithSource(
-            this->context,
+            this->context.get(),
             1,
             &source_data,
             &len,
@@ -51,19 +51,19 @@ namespace echidna::client {
         ));
         check(status);
 
-        status = clBuildProgram(program, 0, nullptr, nullptr, nullptr, nullptr);
+        status = clBuildProgram(program.get(), 0, nullptr, nullptr, nullptr, nullptr);
         if (status == CL_BUILD_PROGRAM_FAILURE) {
             size_t size;
-            check(clGetProgramBuildInfo(program, this->device_id, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size));
+            check(clGetProgramBuildInfo(program.get(), this->device_id, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size));
             std::string msg(size, 0);
-            check(clGetProgramBuildInfo(program, this->device_id, CL_PROGRAM_BUILD_LOG, size, msg.data(), nullptr));
+            check(clGetProgramBuildInfo(program.get(), this->device_id, CL_PROGRAM_BUILD_LOG, size, msg.data(), nullptr));
 
             throw KernelCompilationException(msg);
         } else {
             check(status);
         }
 
-        auto kernel = UniqueKernel(clCreateKernel(program, kernel_name, &status));
+        auto kernel = UniqueKernel(clCreateKernel(program.get(), kernel_name, &status));
         switch (status) {
             case CL_INVALID_KERNEL_NAME:
                 throw KernelCompilationException("Program does not contain kernel '", kernel_name, "'");
@@ -92,7 +92,7 @@ namespace echidna::client {
         };
 
         auto image = UniqueMemObject(clCreateImage(
-            this->context,
+            this->context.get(),
             CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY,
             &format,
             &desc,
