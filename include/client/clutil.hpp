@@ -18,11 +18,13 @@ namespace echidna::client {
 
     cl_device_type getDeviceType(cl_device_id device_id);
 
+    cl_int getEventExecutionStatus(cl_event event);
+
     template <typename T, cl_int (*deleter)(T)>
     struct UniqueCLHandle {
         T handle;
 
-        UniqueCLHandle(T handle): handle(handle) {}
+        explicit UniqueCLHandle(T handle): handle(handle) {}
 
         UniqueCLHandle(UniqueCLHandle&& other):
             handle(std::exchange(other.handle, nullptr)) {}
@@ -42,7 +44,11 @@ namespace echidna::client {
             }
         }
 
-        operator T() const {
+        operator T&() {
+            return this->handle;
+        }
+
+        operator const T&() const {
             return this->handle;
         }
     };

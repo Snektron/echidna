@@ -11,22 +11,24 @@ namespace echidna::client {
         context(nullptr), command_queue(nullptr)
     {
         cl_int status;
-        this->context = clCreateContext(
+        this->context = UniqueContext(clCreateContext(
             nullptr,
             1,
             &device_id,
             nullptr,
             nullptr,
             &status
-        );
+        ));
         check(status);
 
-        this->command_queue = clCreateCommandQueue(this->context, this->device_id, 0, &status);
+        this->command_queue = UniqueCommandQueue(clCreateCommandQueue(this->context, this->device_id, 0, &status));
         check(status);
 
         for (size_t i = 0; i < RENDER_OVERLAP; ++i) {
-            this->events.push_back(clCreateUserEvent(this->context, &status));
+            auto event = UniqueEvent(clCreateUserEvent(this->context, &status));
             check(status);
+            check(clSetUserEventStatus(event, CL_COMPLETE));
+            this->events.push_back(std::move(event));
         }
     }
 

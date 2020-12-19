@@ -35,6 +35,8 @@ namespace echidna::client {
 
             RenderTask createRenderTask(RenderTaskInfo task_info);
 
+            void runUntilCompletion(const RenderTask& task);
+
             void finishAll();
     };
 }
