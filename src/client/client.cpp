@@ -96,6 +96,9 @@ namespace echidna::client {
                         std::memcpy(&request[1 + i * sizeof(uint32_t)], &this->send_queue[i], sizeof(uint32_t));
                     }
 
+
+                    this->send_queue.clear();
+
                     lock.release();
 
                     if(!this->issueRequest(request.get(), request_size)) {
@@ -103,10 +106,6 @@ namespace echidna::client {
 
                         //TODO: log
                     }
-
-                    lock.lock();
-
-                    this->send_queue.clear();
                 }
             }
         }
