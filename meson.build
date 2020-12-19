@@ -41,6 +41,7 @@ include = include_directories('include')
 
 client_deps = [
     dependency('OpenCL'),
+    dependency('threads'),
     subproject('lodepng').get_variable('lodepng_dep'),
 ]
 

@@ -8,6 +8,7 @@
 #include <CL/cl.h>
 #include <vector>
 #include <array>
+#include <condition_variable>
 #include <cstdint>
 
 namespace echidna::client {
@@ -28,6 +29,8 @@ namespace echidna::client {
             constexpr static const cl_image_format RENDER_TARGET_FORMAT = {CL_RGBA, CL_UNORM_INT8};
 
             std::vector<Device> devices;
+            std::mutex mutex;
+            std::condition_variable;
 
             void addDevice(cl_device_id device_id);
         public:
@@ -44,6 +47,8 @@ namespace echidna::client {
             std::pair<size_t, size_t> schedule(RenderTask& task);
 
             void launch(RenderTask& task, size_t device_index, size_t frame_index);
+
+            static void targetDownloaded(cl_event event, cl_int status, void* user_data);
     };
 }
 

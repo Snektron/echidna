@@ -5,6 +5,7 @@
 
 #include <utility>
 #include <algorithm>
+#include <iostream>
 
 namespace echidna::client {
     void Renderer::addDevice(cl_device_id device_id) {
@@ -111,19 +112,23 @@ namespace echidna::client {
             for (size_t j = 0; j < task.device_info.size(); ++j) {
                 auto& info = task.device_info[j];
                 for (size_t i = 0; i < info.render_targets.size(); ++i) {
-                    cl_int event_status = getEventExecutionStatus(info.device->frames[i].target_downloaded.get());
-                    switch (event_status) {
-                        case CL_COMPLETE:
-                            return {j, i};
-                        case CL_QUEUED:
-                        case CL_SUBMITTED:
-                        case CL_RUNNING:
-                            continue;
-                        default:
-                            // TODO: This returns an error when the kernel has a problem
-                            // and should be handled more appropriately
-                            check(event_status);
+                    if (info.device->frames[i].ready->exchange(false)) {
+                        return {j, i};
                     }
+
+                    // cl_int event_status = getEventExecutionStatus(info.device->frames[i].target_downloaded.get());
+                    // switch (event_status) {
+                    //     case CL_COMPLETE:
+                    //         return {j, i};
+                    //     case CL_QUEUED:
+                    //     case CL_SUBMITTED:
+                    //     case CL_RUNNING:
+                    //         continue;
+                    //     default:
+                    //         // TODO: This returns an error when the kernel has a problem
+                    //         // and should be handled more appropriately
+                    //         check(event_status);
+                    // }
                 }
             }
         }
@@ -136,6 +141,7 @@ namespace echidna::client {
         auto* device = info.device;
         auto& render_target = info.render_targets[frame_index];
         auto& host_render_target = info.host_render_targets[frame_index];
+        auto& frame = device->frames[frame_index];
 
         check(clSetKernelArg(info.kernel.get(), 0, sizeof(cl_mem), &render_target.get()));
         check(clEnqueueNDRangeKernel(
@@ -163,8 +169,22 @@ namespace echidna::client {
             0,
             host_render_target.data(),
             1,
-            &device->frames[frame_index].kernel_completed.get(),
-            &device->frames[frame_index].target_downloaded.get()
+            &frame.kernel_completed.get(),
+            &frame.target_downloaded.get()
         ));
+
+        check(clSetEventCallback(
+            frame.target_downloaded.get(),
+            CL_COMPLETE,
+            &Renderer::targetDownloaded,
+            reinterpret_cast<void*>(&frame)
+        ));
+    }
+
+    void Renderer::targetDownloaded(cl_event event, cl_int status, void* user_data) {
+        auto* frame = reinterpret_cast<Frame*>(user_data);
+        std::cout << "Downloaded" << std::endl;
+        std::cout.flush();
+        *frame->ready = true;
     }
 }

@@ -8,6 +8,8 @@
 #include <vector>
 #include <string_view>
 #include <array>
+#include <atomic>
+#include <memory>
 
 namespace echidna::client {
     constexpr const size_t FRAMES = 2;
@@ -15,6 +17,9 @@ namespace echidna::client {
     struct Frame {
         UniqueEvent kernel_completed;
         UniqueEvent target_downloaded;
+        std::unique_ptr<std::atomic_bool> ready;
+
+        Frame(cl_context context);
     };
 
     struct Device {

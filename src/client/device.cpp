@@ -6,6 +6,11 @@
 #include <algorithm>
 
 namespace echidna::client {
+    Frame::Frame(cl_context context):
+        kernel_completed(createEvent(context, CL_COMPLETE)),
+        target_downloaded(createEvent(context, CL_COMPLETE)),
+        ready(std::make_unique<std::atomic_bool>(true)) {}
+
     Device::Device(cl_device_id device_id):
         device_id(device_id), type_mask(getDeviceType(device_id)),
         context(nullptr), command_queue(nullptr)
@@ -25,10 +30,7 @@ namespace echidna::client {
         check(status);
 
         for (size_t i = 0; i < FRAMES; ++i) {
-            this->frames.push_back({
-                createEvent(this->context.get(), CL_COMPLETE),
-                createEvent(this->context.get(), CL_COMPLETE),
-            });
+            this->frames.emplace_back(this->context.get());
         }
     }
 
