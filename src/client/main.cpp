@@ -35,24 +35,18 @@ int main(int argc, const char* argv[]) {
         echidna::client::Client client(argv[1], port, render_queue);
         client.start();
 
-        // auto renderer = echidna::client::Renderer(8);
+        auto renderer = echidna::client::Renderer(8);
 
         while(true) {
-            log::write("Waiting for task");
-
             auto task_info = render_queue.getTask([&] {
                 client.requestMoreJobs();
             });
 
+            auto task = renderer.createRenderTask(task_info);
 
-            log::write("Recieved a task ", task_info.job_id);
-            log::write(task_info.kernel_source);
+            auto avg_frame_time = renderer.runUntilCompletion(task);
 
-            // auto task = renderer.createRenderTask(task_info);
-
-            // auto avg_frame_time = renderer.runUntilCompletion(task);
-
-            client.updateServer(task_info.job_id, task_info.timestamps, 1000000);
+            client.updateServer(task_info.job_id, task_info.timestamps, avg_frame_time);
         }
     } catch (const echidna::error::Exception& err) {
         log::write(err.what());
