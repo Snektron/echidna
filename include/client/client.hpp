@@ -31,6 +31,7 @@ namespace echidna::client {
             std::mutex send_queue_mutex;
             std::condition_variable send_queue_cond;
             std::atomic<bool> active;
+            std::atomic<uint64_t> processing_time;
             std::vector<ClientPacket> send_queue;
 
             void handleRecv();
@@ -45,7 +46,7 @@ namespace echidna::client {
             void join();
             void stop();
 
-            void updateServer(uint32_t, const std::vector<uint32_t>&);
+            void updateServer(uint32_t, const std::vector<uint32_t>&, uint64_t);
             void requestMoreJobs();
     };
 }

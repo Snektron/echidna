@@ -24,14 +24,14 @@ namespace echidna::server {
     }
 
     void CLIManager::serverThread() {
-        try {
-            while(this->active) {
+        while(this->active) {
+            try {
                 std::unique_ptr<net::Socket> sock = this->socket.accept();
 
                 this->handleSocket(sock.get());
             }
+            catch(const error::NetworkException& n) {}
         }
-        catch(const error::NetworkException& n) {}
 
         this->stop();
     }

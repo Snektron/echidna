@@ -121,7 +121,9 @@ namespace echidna::client {
         this->stop();
     }
 
-    void Client::updateServer(uint32_t job_id, const std::vector<uint32_t>& frame_id) {
+    void Client::updateServer(uint32_t job_id, const std::vector<uint32_t>& frame_id, uint64_t processing_time) {
+        this->processing_time = processing_time;
+
         std::unique_lock lock(this->send_queue_mutex);
         for(uint32_t f : frame_id) {
             this->send_queue.push_back(ClientPacket{job_id, f});
@@ -131,9 +133,12 @@ namespace echidna::client {
     }
 
     void Client::requestMoreJobs() {
-        uint8_t data = static_cast<uint8_t>(protocol::ClientPacketID::FINISH_JOB);
+        std::unique_ptr<uint8_t[]> data(new uint8_t[sizeof(uint64_t) + 1]);
+        data[0] = static_cast<uint8_t>(protocol::ClientPacketID::FINISH_JOB);
+        uint64_t timing = 0;
+        std::memcpy(&data[1], &timing, sizeof(uint64_t));
 
-        if(!this->issueRequest(&data, sizeof(uint8_t))) {
+        if(!this->issueRequest(&data, sizeof(uint64_t) + 1)) {
             this->stop();
             throw error::NoJobsAvailableException("Failed to send a request for more jobs to the client");
         }

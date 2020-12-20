@@ -1,4 +1,6 @@
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 #include "client/client.hpp"
 #include "client/renderqueue.hpp"
@@ -27,7 +29,8 @@ int main() {
         for(uint32_t t : render_info.timestamps) {
             std::cout << t << ", ";
         }
-        client.updateServer(render_info.job_id, render_info.timestamps);
+        std::this_thread::sleep_for(std::chrono::microseconds(10 * render_info.timestamps.size()));
+        client.updateServer(render_info.job_id, render_info.timestamps, 10);
         std::cout << std::endl;
     }
     return 0;

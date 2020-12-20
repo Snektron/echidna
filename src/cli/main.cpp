@@ -120,7 +120,7 @@ bool parseDimArg(const char* arg, uint32_t& w, uint32_t& h) {
         return false;
 
     size_t len = std::strlen(arg);
-    auto [hend, herr] = std::from_chars(x + 1, arg + len, w);
+    auto [hend, herr] = std::from_chars(x + 1, arg + len, h);
     if (herr != std::errc() || hend != arg + len)
         return false;
 
@@ -224,6 +224,7 @@ int main(int argc, char* argv[]) {
     echidna::net::Socket sock;
 
     try {
+        std::cout << "Connecting to host " << host_opt << ":" << port << std::endl;
         sock.connect(host_opt, port);
     } catch (const echidna::error::SocketException& err) {
         std::cerr << "Error: " << err.what() << std::endl;
