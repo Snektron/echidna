@@ -141,6 +141,8 @@ namespace echidna::client {
         auto& frame = device->frames[frame_index];
 
         check(clSetKernelArg(info.kernel.get(), 0, sizeof(cl_mem), &render_target.get()));
+        check(clSetKernelArg(info.kernel.get(), 1, sizeof(cl_uint), &timestamp));
+
         check(clEnqueueNDRangeKernel(
             device->command_queue.get(),
             info.kernel.get(),
@@ -200,6 +202,7 @@ namespace echidna::client {
     }
 
     void Renderer::targetDownloadedCb(cl_event event, cl_int status, void* user_data) {
+        // TODO: Check status and throw on main thread
         auto info = std::unique_ptr<TargetDownloadedInfo>(
             reinterpret_cast<TargetDownloadedInfo*>(user_data)
         );
