@@ -1,12 +1,12 @@
-//#include "client/clerror.hpp"
-//#include "client/renderer.hpp"
-//#include "client/device.hpp"
+#include "client/clerror.hpp"
+#include "client/renderer.hpp"
+#include "client/device.hpp"
 #include "client/client.hpp"
 #include "client/renderqueue.hpp"
 #include "utils/log.hpp"
 #include "error/exception.hpp"
 
-//#include <CL/cl.h>
+#include <CL/cl.h>
 #include <iostream>
 #include <vector>
 #include <charconv>
