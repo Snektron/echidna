@@ -12,6 +12,9 @@ auto kernel = R"(
 #define EPSILON (1e-4)
 #define PI (3.14159265f)
 #define TAU (2 * PI)
+#define SAMPLES (32)
+
+// http://www.kevinbeason.com/smallpt/
 
 struct ray {
     float3 o;
@@ -35,16 +38,22 @@ constant struct sphere scene[] = {
     {1e5, {-1e5+99,40.8,81.6}, {}, {.25, .25, .75}, REFL_DIFF},
     {1e5, {50, 40.8, 1e5}, {}, {.75, .75, .75}, REFL_DIFF},
     {1e5, {50, 1e5, 81.6}, {}, {.75, .75, .75}, REFL_DIFF},
-    {1e5, {50,-1e5 + 81.6, 81.6}, {}, {.75, .75, .75}, REFL_DIFF},
+    {1e5, {50, -1e5 + 81.6, 81.6}, {}, {.75, .75, .75}, REFL_DIFF},
     {1e5, {50,40.8,-1e5 + 300}, {}, {}, REFL_DIFF},
     {16.5, {27, 16.5, 47}, {}, {.999, .999, .999}, REFL_SPEC},
     {16.5, {73, 16.5, 78}, {}, {.999, .999, .999}, REFL_REFR},
     {600, {50, 681.6-.27, 81.6}, {12, 12, 12}, {}, REFL_DIFF},
 };
 
-float rand(float* seed) {
-    float ipart;
-    return fract(sin((*seed)++) * 43758.5453123, &ipart);
+float rand(uint2* seed) {
+    // See https://www.shadertoy.com/view/4tXyWN
+
+    seed->y += 1;
+
+    uint2 x = *seed;
+    uint2 q = 1103515245U * ((x >> 1U) ^ (x.yx));
+    uint n = 1103515245U * (q.x ^ (q.y >> 3U));
+    return (float) n * (1.0  / (float) 0xffffffffU);
 }
 
 double sphere_intersect(constant struct sphere* s, struct ray r) {
@@ -75,15 +84,24 @@ inline int scene_intersect(struct ray r, float* t, int ignore) {
     return i;
 }
 
-float3 radiance(struct ray r, int depth, float* seed) {
+float3 radiance(struct ray r, int depth, int2* seed) {
     int last = -1;
     float3 col = {1, 1, 1};
+
+    //   e0 + f0 * (e1 + f1 * (e2 + f2 * (e3 + f3)))
+    // = e0 + f0 * (e1 + f1 * e2 + f1 * f2 * (e3 + f3))
+    // = e0 + f0 * e1 + f0 * f1 * e2 + f0 * f1 * f2 * (e3 + f3)
+    // = e0 + f0 * e1 + f0 * f1 * e2 + f0 * f1 * f2 * e3 + f0 * f1 * f2 * f3
+
+    float3 f_accum = {1, 1, 1};
+    float3 c_accum = {0, 0, 0};
 
     for (int i = 0; i < depth; ++i) {
         float t;
         int index = scene_intersect(r, &t, last);
         if (index == -1) {
-            return (float3){0, 0, 0};
+            f_accum = (float3){0, 0, 0};
+            break;
         }
         last = index;
 
@@ -93,10 +111,16 @@ float3 radiance(struct ray r, int depth, float* seed) {
         float3 nl = dot(n, r.d) < 0 ? n : -n;
         float3 f = s->c;
         float p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y : f.z;
-        col *= f;
-        col += s->e;
+
+        if (rand(seed) < p) {
+            f *= 1.f / p;
+        }
+
+        c_accum += s->e * f_accum;
+        f_accum *= f;
 
         r.o = x;
+        float3 refl = n * 2 * dot(n, r.d);
 
         if (s->refl == REFL_DIFF) {
             float r1 = TAU * rand(seed);
@@ -108,33 +132,44 @@ float3 radiance(struct ray r, int depth, float* seed) {
             float3 d = normalize(u * cos(r1) * r2s + v * sin(r1) * r2s + w * sqrt(1 - r2));
             r.d = d;
         } else if (s->refl == REFL_SPEC) {
-            r.d -= n * 2 * dot(n, r.d);
+            r.d -= refl;
         } else {
             // REFR
-            struct ray refl_ray = {x, r.d * n * 2 * dot(n, r.d)};
             bool into = dot(n, nl) > 0;
             float nc = 1, nt = 1.5, nnt = into ? nc / nt : nt / nc;
             float ddn = dot(r.d, nl);
             float cos2t = 1 - nnt * nnt * (1 - ddn * ddn);
             if (cos2t < 0) {
-                r = refl_ray;
+                r.d -= refl;
                 continue;
             }
 
-            float3 tdir = normalize(r.d * nnt - n * (into ? 1 : -1) * ddn * nnt + sqrt(cos2t));
+            float3 tdir = normalize(r.d * nnt - n * (into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)));
             float a = nt - nc, b = nt + nc, R0 = a * a / (b * b);
             float c = 1 - (into ? -ddn : dot(tdir, n));
             float Re = R0 + (1 - R0) * c * c * c * c * c;
             float Tr = 1 - Re;
-            float P = 0.25 + 0.25 * Re;
+            float P = 0.25 + 0.5 * Re;
             float RP = Re / P;
             float TP = Tr / (1 - P);
-            r = refl_ray;
-            c *= Re;
+
+            // Randomly reflect or refract
+            if (rand(seed) < P) {
+                r.d -= refl;
+                f_accum *= RP;
+            } else {
+                r.d = tdir;
+                f_accum *= TP;
+            }
+
+            r.d = tdir;
+            f *= TP;
         }
     }
 
-    return col;
+    c_accum += f_accum;
+
+    return c_accum;
 }
 
 float3 ray(float2 uv, float aspect, float3 fwd, float3 up) {
@@ -145,19 +180,29 @@ float3 ray(float2 uv, float aspect, float3 fwd, float3 up) {
 
 kernel void render(write_only image2d_t target, uint timestamp) {
     int2 pix = (int2){get_global_id(0), get_global_id(1)};
+    float2 pixf = convert_float2(pix) + 0.5f / SAMPLES;
     float2 dim = convert_float2(get_image_dim(target));
-    float2 uv = (convert_float2(pix) + 0.5f) / dim;
     float3 fwd = {0, -0.042612f, -1};
     float3 up = {0, 1, 0};
-    float3 rd = ray(uv, dim.y / dim.x, fwd, up);
-    struct ray r = {{50, 52, 295.6}, rd};
-    float seed = uv.x * 10 + uv.y;
+    float3 ro = {50, 52, 295.6};
+    float aspect = dim.y / dim.x;
+
+    uint2 seed = {
+        (uint) (get_global_id(0) + get_global_id(1) * get_image_width(target)),
+        0
+    };
 
     float3 c = {};
-    for (int i = 0; i < 1024; ++i) {
-        c += radiance(r, 5, &seed);
+    for (int x = 0; x < SAMPLES; ++x) {
+        for (int y = 0; y < SAMPLES; ++y) {
+            float2 po = convert_float2((int2){x, y}) / SAMPLES;
+            float2 uv = (pixf + po) / dim;
+            float3 rd = ray(uv, aspect, fwd, up);
+            struct ray r = {ro, rd};
+            c += radiance(r, 5, &seed);
+        }
     }
-    c /= 1024.f;
+    c /= SAMPLES * SAMPLES;
 
     write_imagef(target, pix, (float4){c.x, c.y, c.z, 1});
 }
