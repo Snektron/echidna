@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (!dim_opt) {
-            std::cerr << "Error: --submit requires --frames" << std::endl;
+            std::cerr << "Error: --submit requires --dim" << std::endl;
             return EXIT_FAILURE;
         }
     }
