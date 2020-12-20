@@ -9,7 +9,7 @@
 #include <iostream>
 
 namespace echidna::client {
-    Client::Client(const std::string& host, int host_port, RenderQueue& queue) : render_queue(queue) {
+    Client::Client(const std::string& host, int host_port, RenderQueue& queue) : render_queue(queue), processing_time(0) {
         this->socket.connect(host, host_port);
     }
 
@@ -135,10 +135,10 @@ namespace echidna::client {
     void Client::requestMoreJobs() {
         std::unique_ptr<uint8_t[]> data(new uint8_t[sizeof(uint64_t) + 1]);
         data[0] = static_cast<uint8_t>(protocol::ClientPacketID::FINISH_JOB);
-        uint64_t timing = 0;
+        uint64_t timing = this->processing_time;
         std::memcpy(&data[1], &timing, sizeof(uint64_t));
 
-        if(!this->issueRequest(&data, sizeof(uint64_t) + 1)) {
+        if(!this->issueRequest(data.get(), sizeof(uint64_t) + 1)) {
             this->stop();
             throw error::NoJobsAvailableException("Failed to send a request for more jobs to the client");
         }
