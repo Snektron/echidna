@@ -12,7 +12,7 @@ auto kernel = R"(
 #define EPSILON (1e-4)
 #define PI (3.14159265f)
 #define TAU (2 * PI)
-#define SAMPLES (1)
+#define SAMPLES (64)
 
 // http://www.kevinbeason.com/smallpt/
 
@@ -225,7 +225,8 @@ int main() {
             600
         });
 
-        renderer.runUntilCompletion(task);
+        auto avg_frame_time = renderer.runUntilCompletion(task);
+        log::write("Average frame time: ", avg_frame_time, "us");
     } catch (const echidna::client::NoDeviceException& err) {
         log::write("Failed to initialize any OpenCL device");
         return EXIT_FAILURE;

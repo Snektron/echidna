@@ -11,6 +11,7 @@
 #include <array>
 #include <condition_variable>
 #include <optional>
+#include <chrono>
 #include <cstdint>
 
 namespace echidna::client {
@@ -24,7 +25,10 @@ namespace echidna::client {
     struct RenderTask {
         RenderTaskInfo task_info;
         std::vector<DeviceTaskInfo> device_info;
+        uint64_t cumulative_frame_time;
     };
+
+    struct TargetDownloadedInfo;
 
     class Renderer {
         private:
@@ -49,7 +53,7 @@ namespace echidna::client {
 
             RenderTask createRenderTask(RenderTaskInfo task_info);
 
-            void runUntilCompletion(RenderTask& task);
+           uint64_t runUntilCompletion(RenderTask& task);
 
             void finishAll();
 
@@ -58,15 +62,13 @@ namespace echidna::client {
 
             void launch(RenderTask& task, size_t device_index, size_t frame_index, uint32_t timestamp);
 
-            void targetDownloaded(RenderTask* task, size_t device_index, size_t frame_index, uint32_t timestamp);
-
-            void kernelFailed(RenderTask* task, cl_int status);
+            void targetDownloaded(TargetDownloadedInfo& info);
 
             void wait();
 
             void throwIfKernelError();
 
-            static void targetDownloadedCb(cl_event event, cl_int status, void* user_data);
+            static void targetDownloaded(cl_event event, cl_int status, void* user_data);
     };
 
     struct TargetDownloadedInfo {
@@ -75,6 +77,7 @@ namespace echidna::client {
         size_t device_index;
         size_t frame_index;
         uint32_t timestamp;
+        std::chrono::steady_clock::time_point start_time;
     };
 }
 
