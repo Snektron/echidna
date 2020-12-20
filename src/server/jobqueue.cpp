@@ -7,11 +7,11 @@ namespace echidna::server {
 
     JobQueue::~JobQueue() {}
 
-    void JobQueue::addJob(const std::string& shader, uint32_t frames, uint32_t fps, uint32_t width, uint32_t height) {
+    uint32_t JobQueue::addJob(const std::string& shader, uint32_t frames, uint32_t fps, uint32_t width, uint32_t height) {
         std::unique_lock lock(this->job_mutex);
         std::unique_lock lock2(this->job_map_mutex);
 
-        uint32_t job_id = ++this->job_offset;
+        uint32_t job_id = this->job_offset++;
 
         this->jobs[job_id] = new Job(shader, frames, fps, width, height);
         this->job_queue.push_back(job_id);
@@ -19,6 +19,7 @@ namespace echidna::server {
         std::cout << "Created job " << job_id << " (" << shader << ", " << frames << ", " << fps << ", " << width << ", " << height << ")" << std::endl;
 
         this->job_wait.notify_all();
+        return job_id;
     }
 
     void JobQueue::addTasks(const std::vector<Task>& tasks) {
@@ -83,5 +84,29 @@ namespace echidna::server {
 
         std::unique_lock lock2(this->finished_mutex);
         this->finished_jobs.push_back(job_id);
+    }
+
+    std::vector<JobStatus> JobQueue::getStatus() {
+        std::vector<JobStatus> result;
+        {
+            std::unique_lock finished_jobs_lock(this->finished_mutex);
+
+            for(uint32_t id : this->finished_jobs) {
+                result.push_back(JobStatus{id, 0, 0});
+            }
+            this->finished_jobs.clear();
+        }
+
+        {
+            std::shared_lock lock(this->job_map_mutex);
+
+            for(auto& it : this->jobs) {
+                uint32_t job_id = it.first;
+                uint32_t total_frames = it.second->getTotalFrames();
+                uint32_t frames_completed = it.second->getRenderedFrames();
+                result.push_back(JobStatus{job_id, frames_completed, total_frames});
+            }
+        }
+        return result;
     }
 }

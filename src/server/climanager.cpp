@@ -60,10 +60,22 @@ namespace echidna::server {
         shader_source.resize(shader_size);
         sock->recvFully(shader_source.data(), shader_size);
 
-        this->job_queue.addJob(shader_source, frames, fps, width, height);
+        uint32_t job_id = this->job_queue.addJob(shader_source, frames, fps, width, height);
+        sock->sendFully(&job_id, sizeof(uint32_t));
     }
 
     void CLIManager::handleStatus(net::Socket* sock) {
+        auto status = this->job_queue.getStatus();
 
+        size_t packet_size = 1 + 3 * status.size();
+        std::unique_ptr<uint32_t[]> packet(new uint32_t[packet_size]);
+        packet[0] = status.size();
+        for(size_t i = 0; i < status.size(); ++i) {
+            packet[3*i + 1] = status[i].job_id;
+            packet[3*i + 2] = status[i].frames_rendered;
+            packet[3*i + 3] = status[i].frames_total;
+        }
+
+        sock->sendFully(packet.get(), packet_size * sizeof(uint32_t));
     }
 }

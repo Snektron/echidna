@@ -13,6 +13,12 @@
 #include "server/task.hpp"
 
 namespace echidna::server {
+    struct JobStatus {
+        uint32_t job_id;
+        uint32_t frames_rendered;
+        uint32_t frames_total;
+    };
+
     class JobQueue {
         private:
             std::deque<Task> task_queue;
@@ -30,11 +36,13 @@ namespace echidna::server {
             JobQueue();
             ~JobQueue();
 
-            void addJob(const std::string&, uint32_t, uint32_t, uint32_t, uint32_t);
+            uint32_t addJob(const std::string&, uint32_t, uint32_t, uint32_t, uint32_t);
             void addTasks(const std::vector<Task>&);
             std::vector<Task> getJobs(size_t);
             Job* findJob(uint32_t);
             void finishJob(uint32_t);
+
+            std::vector<JobStatus> getStatus();
     };
 }
 

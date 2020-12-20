@@ -32,6 +32,13 @@ namespace echidna::server {
                     callback();
                 }
             }
+
+            inline uint32_t getTotalFrames() const {
+                return this->total_frames;
+            }
+            inline uint32_t getRenderedFrames() const {
+                return this->frames_rendered;
+            }
     };
 }
 
