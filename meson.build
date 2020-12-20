@@ -37,8 +37,8 @@ client_sources = [
 ]
 
 client_test_sources = [
+    'src/client/main.cpp',
     'src/client/client.cpp',
-    'src/client/clienttest.cpp',
     'src/client/renderqueue.cpp'
 ]
 

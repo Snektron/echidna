@@ -32,19 +32,19 @@ namespace echidna::server {
     }
 
     std::vector<Task> JobQueue::getJobs(size_t max_jobs) {
+        std::vector<Task> results;
         std::unique_lock lock(this->job_mutex);
 
         this->job_wait.wait(lock, [&] {return this->job_queue.size() > 0 || this->task_queue.size() > 0;});
 
-        std::vector<Task> results;
         while(this->task_queue.size() > 0 && results.size() < max_jobs) {
             results.push_back(task_queue.front());
             task_queue.pop_front();
         }
         while(this->job_queue.size() > 0 && results.size() < max_jobs) {
             std::shared_lock lock2(this->job_map_mutex);
-            uint32_t job_id = job_queue.front();
-            Job& front_job = *jobs[job_id];
+            uint32_t job_id = this->job_queue.front();
+            Job& front_job = *this->jobs[job_id];
 
             while(front_job.hasTasks() && results.size() < max_jobs) {
                 auto next_job = front_job.getNextTask();
@@ -53,7 +53,7 @@ namespace echidna::server {
             }
 
             if(!front_job.hasTasks()) {
-                job_queue.pop_front();
+                this->job_queue.pop_front();
             }
         }
 
