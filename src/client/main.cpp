@@ -28,26 +28,25 @@ enum refl_type {
 };
 
 struct sphere {
-    double r;
-    float3 p, e, c;
+    float4 p, e, c;
+    float r;
     enum refl_type refl;
 };
 
 constant struct sphere scene[] = {
-    {1e5, {1e5+1,40.8,81.6}, {}, {.75, .25, .25}, REFL_DIFF},
-    {1e5, {-1e5+99,40.8,81.6}, {}, {.25, .25, .75}, REFL_DIFF},
-    {1e5, {50, 40.8, 1e5}, {}, {.75, .75, .75}, REFL_DIFF},
-    {1e5, {50, 1e5, 81.6}, {}, {.75, .75, .75}, REFL_DIFF},
-    {1e5, {50, -1e5 + 81.6, 81.6}, {}, {.75, .75, .75}, REFL_DIFF},
-    {1e5, {50,40.8,-1e5 + 300}, {}, {}, REFL_DIFF},
-    {16.5, {27, 16.5, 47}, {}, {.999, .999, .999}, REFL_SPEC},
-    {16.5, {73, 16.5, 78}, {}, {.999, .999, .999}, REFL_REFR},
-    {600, {50, 681.6-.27, 81.6}, {12, 12, 12}, {}, REFL_DIFF},
+    {{1e5+1, 40.8, 81.6, 0}, {}, {.75, .25, .25, 0}, 1e5, REFL_DIFF},
+    {{-1e5+99, 40.8, 81.6, 0}, {}, {.25, .25, .75, 0}, 1e5, REFL_DIFF},
+    {{50, 40.8, 1e5, 0}, {}, {.75, .75, .75, 0}, 1e5, REFL_DIFF},
+    {{50, 1e5, 81.6, 0}, {}, {.75, .75, .75, 0}, 1e5, REFL_DIFF},
+    {{50, -1e5 + 81.6, 81.6, 0}, {}, {.75, .75, .75, 0}, 1e5, REFL_DIFF},
+    {{50,40.8,-1e5 + 300, 0}, {}, {}, 1e5, REFL_DIFF},
+    {{27, 16.5, 47, 0}, {}, {.999, .999, .999, 0}, 16.5, REFL_SPEC},
+    {{73, 16.5, 78, 0}, {}, {.999, .999, .999, 0}, 16.5, REFL_REFR},
+    {{50, 681.6-.27, 81.6, 0}, {12, 12, 12, 0}, {}, 600, REFL_DIFF}
 };
 
-float rand(uint2* seed) {
+inline float rand(private uint2* seed) {
     // See https://www.shadertoy.com/view/4tXyWN
-
     seed->y += 1;
 
     uint2 x = *seed;
@@ -57,7 +56,7 @@ float rand(uint2* seed) {
 }
 
 double sphere_intersect(constant struct sphere* s, struct ray r) {
-    float3 p = s->p - r.o;
+    float3 p = s->p.xyz - r.o;
     float b = dot(p, r.d);
     float d = b * b - dot(p, p) + s->r * s->r;
 
@@ -71,7 +70,7 @@ double sphere_intersect(constant struct sphere* s, struct ray r) {
 
 inline int scene_intersect(struct ray r, float* t, int ignore) {
     int i = -1;
-    float t0 = 1e20;
+    float t0 = 1e30;
     for (int j = 0; j < sizeof(scene) / sizeof(struct sphere); ++j) {
         float t1 = sphere_intersect(&scene[j], r);
         if (j != ignore && t1 > EPSILON && t1 < t0) {
@@ -84,7 +83,7 @@ inline int scene_intersect(struct ray r, float* t, int ignore) {
     return i;
 }
 
-float3 radiance(struct ray r, int depth, int2* seed) {
+float3 radiance(struct ray r, int depth, private uint2* seed) {
     int last = -1;
     float3 col = {1, 1, 1};
 
@@ -107,16 +106,16 @@ float3 radiance(struct ray r, int depth, int2* seed) {
 
         constant struct sphere* s = &scene[index];
         float3 x = r.o + r.d * t;
-        float3 n = normalize(x - s->p);
+        float3 n = normalize(x - s->p.xyz);
         float3 nl = dot(n, r.d) < 0 ? n : -n;
-        float3 f = s->c;
+        float3 f = s->c.xyz;
         float p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y : f.z;
 
         if (rand(seed) < p) {
             f *= 1.f / p;
         }
 
-        c_accum += s->e * f_accum;
+        c_accum += s->e.xyz * f_accum;
         f_accum *= f;
 
         r.o = x;
@@ -187,7 +186,7 @@ kernel void render(write_only image2d_t target, uint timestamp) {
     float3 ro = {50, 52, 295.6};
     float aspect = dim.y / dim.x;
 
-    uint2 seed = {
+    private uint2 seed = {
         (uint) (get_global_id(0) + get_global_id(1) * get_image_width(target)),
         0
     };
@@ -195,7 +194,7 @@ kernel void render(write_only image2d_t target, uint timestamp) {
     float3 c = {};
     for (int x = 0; x < SAMPLES; ++x) {
         for (int y = 0; y < SAMPLES; ++y) {
-            float2 po = convert_float2((int2){x, y}) / SAMPLES;
+            float2 po = convert_float2(((int2){x, y})) / SAMPLES;
             float2 uv = (pixf + po) / dim;
             float3 rd = ray(uv, aspect, fwd, up);
             struct ray r = {ro, rd};
@@ -203,7 +202,7 @@ kernel void render(write_only image2d_t target, uint timestamp) {
         }
     }
     c /= SAMPLES * SAMPLES;
-
+    
     write_imagef(target, pix, (float4){c.x, c.y, c.z, 1});
 }
 )";
