@@ -12,7 +12,7 @@ auto kernel = R"(
 #define EPSILON (1e-4)
 #define PI (3.14159265f)
 #define TAU (2 * PI)
-#define SAMPLES (32)
+#define SAMPLES (1)
 
 // http://www.kevinbeason.com/smallpt/
 

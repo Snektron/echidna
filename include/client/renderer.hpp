@@ -10,6 +10,7 @@
 #include <vector>
 #include <array>
 #include <condition_variable>
+#include <optional>
 #include <cstdint>
 
 namespace echidna::client {
@@ -33,6 +34,7 @@ namespace echidna::client {
             std::vector<Device> devices;
             std::mutex mutex;
             std::condition_variable cvar;
+            std::vector<cl_int> errors;
 
             void addDevice(cl_device_id device_id);
         public:
@@ -52,13 +54,17 @@ namespace echidna::client {
             void finishAll();
 
         private:
-            std::pair<size_t, size_t> schedule(RenderTask& task);
+            std::pair<size_t, size_t> schedule();
 
             void launch(RenderTask& task, size_t device_index, size_t frame_index, uint32_t timestamp);
 
             void targetDownloaded(RenderTask* task, size_t device_index, size_t frame_index, uint32_t timestamp);
 
-            void wait(RenderTask& task);
+            void kernelFailed(RenderTask* task, cl_int status);
+
+            void wait();
+
+            void throwIfKernelError();
 
             static void targetDownloadedCb(cl_event event, cl_int status, void* user_data);
     };

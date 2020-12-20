@@ -98,12 +98,12 @@ namespace echidna::client {
 
     void Renderer::runUntilCompletion(RenderTask& task) {
         for (auto timestamp : task.task_info.timestamps) {
-            auto [device_index, frame_index] = schedule(task);
+            auto [device_index, frame_index] = schedule();
             log::write(timestamp, ": launching on device ", device_index, " image ", frame_index);
             this->launch(task, device_index, frame_index, timestamp);
         }
         this->finishAll();
-        this->wait(task);
+        this->wait();
     }
 
     void Renderer::finishAll() {
@@ -112,10 +112,12 @@ namespace echidna::client {
         }
     }
 
-    std::pair<size_t, size_t> Renderer::schedule(RenderTask& task) {
+    std::pair<size_t, size_t> Renderer::schedule() {
         while (true) {
             std::unique_lock<std::mutex> lk(this->mutex);
-            for (size_t device_index = 0; device_index < task.device_info.size(); ++device_index) {
+            this->throwIfKernelError();
+
+            for (size_t device_index = 0; device_index < this->devices.size(); ++device_index) {
                 auto& device = this->devices[device_index];
                 for (size_t frame_index = 0; frame_index < device.frames.size(); ++frame_index) {
                     auto& frame = device.frames[frame_index];
@@ -201,20 +203,19 @@ namespace echidna::client {
         });
     }
 
-    void Renderer::targetDownloadedCb(cl_event event, cl_int status, void* user_data) {
-        // TODO: Check status and throw on main thread
-        auto info = std::unique_ptr<TargetDownloadedInfo>(
-            reinterpret_cast<TargetDownloadedInfo*>(user_data)
-        );
-
-        info->renderer->targetDownloaded(info->task, info->device_index, info->frame_index, info->timestamp);
+    void Renderer::kernelFailed(RenderTask* task, cl_int status) {
+        std::unique_lock<std::mutex> lk(this->mutex);
+        this->errors.push_back(status);
+        this->cvar.notify_one();
     }
 
-    void Renderer::wait(RenderTask& task) {
+    void Renderer::wait() {
         while (true) {
             std::unique_lock<std::mutex> lk(this->mutex);
+            this->throwIfKernelError();
+
             bool any_unready = false;
-            for (size_t device_index = 0; device_index < task.device_info.size(); ++device_index) {
+            for (size_t device_index = 0; device_index < this->devices.size(); ++device_index) {
                 auto& device = this->devices[device_index];
                 for (size_t frame_index = 0; frame_index < device.frames.size(); ++frame_index) {
                     auto& frame = device.frames[frame_index];
@@ -225,6 +226,26 @@ namespace echidna::client {
             if (!any_unready)
                 break;
             this->cvar.wait(lk);
+        }
+    }
+
+    void Renderer::throwIfKernelError() {
+        if (this->errors.size() == 0)
+            return;
+
+        throw CLException(this->errors[0]);
+    }
+
+    void Renderer::targetDownloadedCb(cl_event event, cl_int status, void* user_data) {
+        // TODO: Check status and throw on main thread
+        auto info = std::unique_ptr<TargetDownloadedInfo>(
+            reinterpret_cast<TargetDownloadedInfo*>(user_data)
+        );
+
+        if (status == CL_COMPLETE) {
+            info->renderer->targetDownloaded(info->task, info->device_index, info->frame_index, info->timestamp);
+        } else {
+            info->renderer->kernelFailed(info->task, status);
         }
     }
 }
