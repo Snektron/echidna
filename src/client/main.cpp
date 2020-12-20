@@ -87,10 +87,9 @@ float3 radiance(struct ray r, int depth, private uint2* seed) {
     int last = -1;
     float3 col = {1, 1, 1};
 
-    //   e0 + f0 * (e1 + f1 * (e2 + f2 * (e3 + f3)))
-    // = e0 + f0 * (e1 + f1 * e2 + f1 * f2 * (e3 + f3))
-    // = e0 + f0 * e1 + f0 * f1 * e2 + f0 * f1 * f2 * (e3 + f3)
-    // = e0 + f0 * e1 + f0 * f1 * e2 + f0 * f1 * f2 * e3 + f0 * f1 * f2 * f3
+    //   e0 + f0 * (e1 + f1 * (e2 + f2))
+    // = e0 + f0 * (e1 + f1 * e2 + f1 * f2)
+    // = e0 + f0 * e1 + f0 * f1 * e2 + f0 * f1 * f2
 
     float3 f_accum = {1, 1, 1};
     float3 c_accum = {0, 0, 0};
@@ -202,7 +201,7 @@ kernel void render(write_only image2d_t target, uint timestamp) {
         }
     }
     c /= SAMPLES * SAMPLES;
-    
+
     write_imagef(target, pix, (float4){c.x, c.y, c.z, 1});
 }
 )";
