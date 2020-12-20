@@ -6,7 +6,7 @@ namespace echidna::server {
                                                     fps(fps), width(width), height(height) {}
 
     bool Job::hasTasks() const {
-        return this->frames_submitted == this->total_frames;
+        return this->frames_submitted < this->total_frames;
     }
 
     Task Job::getNextTask() {

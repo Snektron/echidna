@@ -45,7 +45,7 @@ namespace echidna::client {
             void join();
             void stop();
 
-            void updateServer(uint32_t, uint32_t);
+            void updateServer(uint32_t, const std::vector<uint32_t>&);
             void requestMoreJobs();
     };
 }

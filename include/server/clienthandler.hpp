@@ -19,8 +19,8 @@
 namespace echidna::server {
     class ClientManager;
 
-    const size_t BASE_JOB_CAPABILITY = 64;
     const size_t MIN_JOB_CAPABILITY = 4;
+    const size_t BASE_JOB_CAPABILITY = MIN_JOB_CAPABILITY;
     const size_t MAX_JOB_CAPABILITY = 2048;
     const auto ESTIMATED_JOB_TIMEOUT = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::seconds(2));
 
@@ -33,7 +33,7 @@ namespace echidna::server {
             std::atomic<size_t> rendered_frames = 0;
 
             std::chrono::steady_clock::time_point batch_start;
-            size_t job_capability = BASE_JOB_CAPABILITY;
+            std::atomic<size_t> job_capability = BASE_JOB_CAPABILITY;
 
             std::thread active_thread;
             std::thread issue_thread;

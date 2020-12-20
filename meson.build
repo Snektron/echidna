@@ -36,6 +36,12 @@ client_sources = [
     'src/client/renderqueue.cpp'
 ]
 
+client_test_sources = [
+    'src/client/client.cpp',
+    'src/client/clienttest.cpp',
+    'src/client/renderqueue.cpp'
+]
+
 add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')
 
 include = include_directories('include')
@@ -69,5 +75,15 @@ executable(
     sources + ['src/cli/main.cpp'],
     install: true,
     build_by_default: false,
-    include_directories: include
+    include_directories: include,
+    dependencies: dependency('threads')
+)
+
+executable(
+    'echidna-client-test',
+    sources + client_test_sources,
+    install: true,
+    build_by_default: false,
+    include_directories: include,
+    dependencies: dependency('threads')
 )

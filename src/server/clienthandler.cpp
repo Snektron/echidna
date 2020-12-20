@@ -7,6 +7,7 @@
 #include <sstream>
 #include <cstring>
 #include <map>
+#include <iostream>
 
 namespace echidna::server {
     struct JobRequest {
@@ -23,6 +24,7 @@ namespace echidna::server {
     ClientHandler::~ClientHandler() {}
 
     void ClientHandler::run() {
+        std::cout << "Client handler active for client " << this->client_id << std::endl;
         this->active = true;
         this->active_thread = std::thread(&ClientHandler::handleResponse, this);
         this->issue_thread = std::thread(&ClientHandler::handleIssue, this);
@@ -34,6 +36,7 @@ namespace echidna::server {
     }
 
     void ClientHandler::stop() {
+        std::cout << "Stop called" << std::endl;
         this->active = false;
         this->socket->close();
 
@@ -72,6 +75,7 @@ namespace echidna::server {
 
                 switch(id) {
                     case protocol::ClientPacketID::CONNECT:
+                        this->manager.notifyFinish(this->client_id);
                         break;
                     case protocol::ClientPacketID::KEEPALIVE: {
                             std::unique_lock lock(this->keepalive_mutex);
@@ -85,17 +89,7 @@ namespace echidna::server {
                                 uint32_t job_id = this->socket->recv<uint32_t>();
                                 uint32_t frame_id = this->socket->recv<uint32_t>();
 
-                                std::unique_lock lock(this->task_mutex);
-                                ++this->rendered_frames;
-                                for(size_t i = 0; i < this->active_tasks.size(); ++i) {
-                                    if(this->active_tasks[i].job == job_id && this->active_tasks[i].frame == frame_id) {
-                                        this->active_tasks.erase(this->active_tasks.begin() + i);
-                                        lock.unlock();
-
-                                        this->manager.notifyUpdate(job_id, frame_id);
-                                        break;
-                                    }
-                                }
+                                this->manager.notifyUpdate(job_id, frame_id);
                             }
                         }
                         break;
@@ -107,18 +101,16 @@ namespace echidna::server {
 
                                 if(elapsed.count() == 0)
                                     frames = MAX_JOB_CAPABILITY;
-                                else
-                                    frames = (ESTIMATED_JOB_TIMEOUT.count() * rendered_frames) / elapsed.count();
+                                else {
+                                    frames = (ESTIMATED_JOB_TIMEOUT.count() * this->rendered_frames) / elapsed.count();
+                                }
 
                                 if(frames > MAX_JOB_CAPABILITY)
                                     frames = MAX_JOB_CAPABILITY;
                                 else if(frames < MIN_JOB_CAPABILITY)
                                     frames = MIN_JOB_CAPABILITY;
                             }
-                            {
-                                std::unique_lock lock(this->clock_mutex);
-                                this->job_capability = frames;
-                            }
+                            this->job_capability = frames;
                             this->manager.notifyFinish(this->client_id);
                         }
                         break;
@@ -126,6 +118,7 @@ namespace echidna::server {
             }
         }
         catch(const error::NetworkException& e) {
+            std::cout << "Recv error: " << e.what() << std::endl;
         }
 
         this->manager.returnJobs(this->active_tasks);
@@ -142,6 +135,9 @@ namespace echidna::server {
             {
                 std::unique_lock lock(this->task_mutex);
                 this->job_update_cond.wait(lock, [&] {return this->new_jobs || !this->active;});
+                if(!this->active)
+                    break;
+                this->new_jobs = false;
 
                 {
                     std::unique_lock lock(this->clock_mutex);
@@ -150,14 +146,17 @@ namespace echidna::server {
 
                 std::map<uint32_t, JobRequest> requests;
 
-                this->rendered_frames = 0;
-
+                this->rendered_frames = this->active_tasks.size();
                 for(size_t i = 0; i < this->active_tasks.size(); ++i) {
+                    bool already_exists = requests.count(this->active_tasks[i].job) > 0;
                     JobRequest& r = requests[this->active_tasks[i].job];
-                    r.job_id = this->active_tasks[i].job;
-                    r.fps = this->active_tasks[i].fps;
-                    r.image_width = this->active_tasks[i].width;
-                    r.image_height = this->active_tasks[i].height;
+                    if(!already_exists) {
+                        r.job_id = this->active_tasks[i].job;
+                        r.fps = this->active_tasks[i].fps;
+                        r.image_width = this->active_tasks[i].width;
+                        r.image_height = this->active_tasks[i].height;
+                        r.shader = this->active_tasks[i].shader;
+                    }
                     r.frames.push_back(this->active_tasks[i].frame);
                 }
 
@@ -204,6 +203,7 @@ namespace echidna::server {
     void ClientHandler::submitTasks(const std::vector<Task>& tasks) {
         std::unique_lock lock(this->task_mutex);
         this->active_tasks = tasks;
+        this->new_jobs = true;
 
         this->job_update_cond.notify_all();
     }

@@ -6,6 +6,7 @@
 #include "protocol/packet.hpp"
 
 #include <cstring>
+#include <iostream>
 
 namespace echidna::client {
     Client::Client(const std::string& host, int host_port, RenderQueue& queue) : render_queue(queue) {
@@ -20,6 +21,9 @@ namespace echidna::client {
         this->active = true;
         this->recv_thread = std::thread(&Client::handleRecv, this);
         this->send_thread = std::thread(&Client::handleUpdate, this);
+
+        protocol::ClientPacketID connect_id = protocol::ClientPacketID::CONNECT;
+        this->issueRequest(&connect_id, sizeof(connect_id));
     }
 
     void Client::join() {
@@ -66,6 +70,7 @@ namespace echidna::client {
                             this->socket.recvFully(render_task.kernel_source.data(), shader_source_size);
 
                             uint32_t frame_count = this->socket.recv<uint32_t>();
+                            render_task.timestamps.resize(frame_count);
                             this->socket.recvFully(render_task.timestamps.data(), frame_count * sizeof(uint32_t));
 
                             this->render_queue.addTask(render_task);
@@ -75,7 +80,7 @@ namespace echidna::client {
             }
         }
         catch(const error::NetworkException& e) {
-            //TODO: log this
+            std::cout << "Recv error: " << e.what() << std::endl;
         }
 
         this->stop();
@@ -94,7 +99,7 @@ namespace echidna::client {
                     std::memcpy(&request[1], &send_queue_size, sizeof(uint32_t));
 
                     for(size_t i = 0; i < send_queue_size; ++i) {
-                        std::memcpy(&request[1 + i * sizeof(uint32_t)], &this->send_queue[i], sizeof(uint32_t));
+                        std::memcpy(&request[1 + sizeof(uint32_t) + i * sizeof(uint32_t) * 2], &this->send_queue[i], 2*sizeof(uint32_t));
                     }
 
 
@@ -116,9 +121,11 @@ namespace echidna::client {
         this->stop();
     }
 
-    void Client::updateServer(uint32_t job_id, uint32_t frame_id) {
+    void Client::updateServer(uint32_t job_id, const std::vector<uint32_t>& frame_id) {
         std::unique_lock lock(this->send_queue_mutex);
-        this->send_queue.push_back(ClientPacket{job_id, frame_id});
+        for(uint32_t f : frame_id) {
+            this->send_queue.push_back(ClientPacket{job_id, f});
+        }
 
         this->send_queue_cond.notify_all();
     }
