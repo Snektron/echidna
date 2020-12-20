@@ -32,7 +32,6 @@ namespace echidna::server {
             std::vector<Task> active_tasks;
             std::atomic<size_t> rendered_frames = 0;
 
-            std::chrono::steady_clock::time_point batch_start;
             std::atomic<size_t> job_capability = BASE_JOB_CAPABILITY;
 
             std::thread active_thread;
@@ -40,13 +39,13 @@ namespace echidna::server {
             std::mutex send_mutex;
             std::mutex keepalive_mutex;
             std::mutex task_mutex;
-            std::shared_mutex clock_mutex;
             std::condition_variable keepalive_cond;
             std::condition_variable job_update_cond;
 
             std::atomic<bool> active;
             std::atomic<bool> keepalive;
             std::atomic<bool> new_jobs;
+            std::atomic<bool> has_received;
 
             protocol::ClientPacketID last_packet;
 

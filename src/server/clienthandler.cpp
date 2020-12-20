@@ -20,7 +20,7 @@ namespace echidna::server {
     };
 
     ClientHandler::ClientHandler(std::unique_ptr<net::Socket>&& socket, ClientManager& manager, uint32_t client_id) :
-                                        socket(std::move(socket)), manager(manager), client_id(client_id), active(false), keepalive(false), new_jobs(false) {}
+                                        socket(std::move(socket)), manager(manager), client_id(client_id), active(false), keepalive(false), new_jobs(false), has_received(false) {}
     ClientHandler::~ClientHandler() {}
 
     void ClientHandler::run() {
@@ -91,26 +91,21 @@ namespace echidna::server {
 
                                 this->manager.notifyUpdate(job_id, frame_id);
                             }
+
+                            this->has_received = true;
                         }
                         break;
                     case protocol::ClientPacketID::FINISH_JOB: {
-                            size_t frames;
-                            {
-                                std::shared_lock lock(this->clock_mutex);
-                                auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - this->batch_start);
+                            uint64_t time_per_frame = this->socket->recv<uint64_t>();
+                            size_t frames = time_per_frame == 0 ? MAX_JOB_CAPABILITY : ESTIMATED_JOB_TIMEOUT.count() / time_per_frame;
 
-                                if(elapsed.count() == 0)
-                                    frames = MAX_JOB_CAPABILITY;
-                                else {
-                                    frames = (ESTIMATED_JOB_TIMEOUT.count() * this->rendered_frames) / elapsed.count();
-                                }
+                            if(frames > MAX_JOB_CAPABILITY)
+                                frames = MAX_JOB_CAPABILITY;
+                            else if(frames < MIN_JOB_CAPABILITY)
+                                frames = MIN_JOB_CAPABILITY;
 
-                                if(frames > MAX_JOB_CAPABILITY)
-                                    frames = MAX_JOB_CAPABILITY;
-                                else if(frames < MIN_JOB_CAPABILITY)
-                                    frames = MIN_JOB_CAPABILITY;
-                            }
-                            this->job_capability = frames;
+                            if(this->has_received)
+                                this->job_capability = frames;
                             this->manager.notifyFinish(this->client_id);
                         }
                         break;
@@ -138,11 +133,6 @@ namespace echidna::server {
                 if(!this->active)
                     break;
                 this->new_jobs = false;
-
-                {
-                    std::unique_lock lock(this->clock_mutex);
-                    this->batch_start = std::chrono::steady_clock::now();
-                }
 
                 std::map<uint32_t, JobRequest> requests;
 
