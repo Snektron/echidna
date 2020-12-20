@@ -1,9 +1,9 @@
 #include <iostream>
 #include <vector>
-#include "CL/cl.h"
-#include "client/clerror.hpp"
-#include "client/renderer.hpp"
-#include "client/device.hpp"
+//#include "CL/cl.h"
+//#include "client/clerror.hpp"
+//#include "client/renderer.hpp"
+//#include "client/device.hpp"
 #include "client/client.hpp"
 #include "client/renderqueue.hpp"
 #include "utils/log.hpp"
@@ -18,12 +18,7 @@ int main(int argc, char* argv[]) {
         echidna::client::RenderQueue render_queue;
         echidna::client::Client client(hostname, port, render_queue);
 
-        log::LOGGER.addSink<log::ConsoleSink>();
-
-        std::vector<uint32_t> timestamps;
-        for (size_t i = 0; i < 1; ++i) {
-            timestamps.push_back(i);
-        }
+        //log::LOGGER.addSink<log::ConsoleSink>();
 
         auto renderer = echidna::client::Renderer(8);
 
@@ -32,14 +27,14 @@ int main(int argc, char* argv[]) {
                 client.requestMoreJobs();
             });
 
-            auto task = renderer.createRenderTask(task_info);
+            //auto task = renderer.createRenderTask(task_info);
 
-            auto avg_frame_time = renderer.runUntilCompletion(task);
-
+            //auto avg_frame_time = renderer.runUntilCompletion(task);
+            uint64_t frame_time = 100;
             client.updateServer(task_info.job_id, task_info.timestamps, avg_frame_time);
         }
     } catch (const echidna::error::Exception& err) {
-        log::write(err.what());
+        //log::write(err.what());
         return EXIT_FAILURE;
     }
 
