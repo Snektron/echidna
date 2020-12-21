@@ -8,7 +8,6 @@
 
 #include <utility>
 #include <algorithm>
-#include <iostream>
 
 namespace echidna::client {
     void Renderer::addDevice(cl_device_id device_id) {

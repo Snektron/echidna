@@ -1,6 +1,5 @@
 #include "server/jobqueue.hpp"
-
-#include <iostream>
+#include "utils/log.hpp"
 
 namespace echidna::server {
     JobQueue::JobQueue() : job_offset(0) {}
@@ -16,7 +15,7 @@ namespace echidna::server {
         this->jobs[job_id] = new Job(shader, frames, fps, width, height);
         this->job_queue.push_back(job_id);
 
-        std::cout << "Created job " << job_id << " (" << shader << ", " << frames << ", " << fps << ", " << width << ", " << height << ")" << std::endl;
+        log::write("Created job ", job_id);
 
         this->job_wait.notify_all();
         return job_id;
@@ -69,7 +68,8 @@ namespace echidna::server {
     }
 
     void JobQueue::finishJob(uint32_t job_id) {
-        std::cout << "Finished job " << job_id << std::endl;
+        log::write("Finished job ", job_id);
+
         {
             std::unique_lock lock(this->job_map_mutex);
             if(this->jobs.count(job_id) == 0)

@@ -49,7 +49,7 @@ int main(int argc, const char* argv[]) {
             client.updateServer(task_info.job_id, task_info.timestamps, avg_frame_time);
         }
     } catch (const echidna::error::Exception& err) {
-        log::write(err.what());
+        log::write("Error: ", err.what());
         return EXIT_FAILURE;
     }
 

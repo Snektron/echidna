@@ -7,7 +7,6 @@
 #include <sstream>
 #include <cstring>
 #include <map>
-#include <iostream>
 
 namespace echidna::server {
     struct JobRequest {

@@ -5,8 +5,6 @@
 #include <vector>
 #include <chrono>
 
-#include <iostream>
-
 namespace echidna::server {
     ClientManager::ClientManager(int server_port, size_t keepalive_time, JobQueue& job_queue) : server_port(server_port), keepalive_time(keepalive_time),
                                     job_queue(job_queue), active(false), client_id_offset(0) {

@@ -15,6 +15,8 @@ namespace echidna::log {
     };
 
     struct ConsoleSink final : public Sink {
+        std::mutex mutex;
+
         ConsoleSink() = default;
         ~ConsoleSink() override = default;
         void write(std::string_view line) override;

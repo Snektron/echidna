@@ -1,9 +1,14 @@
-#include <iostream>
-
 #include "server/server.hpp"
 #include "error/exception.hpp"
+#include "utils/log.hpp"
+
+#include <cstdlib>
+
+namespace log = echidna::log;
 
 int main() {
+    log::LOGGER.addSink<log::ConsoleSink>();
+
     try {
         echidna::server::Server::Config server_config;
         server_config.client_port = 4242;
@@ -12,16 +17,16 @@ int main() {
 
         echidna::server::Server command_server(server_config);
 
-        std::cout << "Starting server" << std::endl;
-
+        log::write("Starting server");
         command_server.run();
 
-        std::cout << "Server active" << std::endl;
+        log::write("Server active");
         command_server.join();
     }
     catch(const echidna::error::Exception& e) {
-        std::cerr << "Program threw error: " << e.what() << std::endl;
-        return 1;
+        log::write("Error: ", e.what());
+        return EXIT_FAILURE;
     }
-    return 0;
+
+    return EXIT_SUCCESS;
 }

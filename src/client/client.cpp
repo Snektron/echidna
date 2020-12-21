@@ -4,9 +4,9 @@
 #include "error/network.hpp"
 #include "error/clientexception.hpp"
 #include "protocol/packet.hpp"
+#include "uitls/log.h"
 
 #include <cstring>
-#include <iostream>
 
 namespace echidna::client {
     Client::Client(const std::string& host, int host_port, RenderQueue& queue) : render_queue(queue), processing_time(0) {
@@ -80,7 +80,7 @@ namespace echidna::client {
             }
         }
         catch(const error::NetworkException& e) {
-            std::cout << "Recv error: " << e.what() << std::endl;
+            log::write("Recv error: ", e.what());
         }
 
         this->stop();

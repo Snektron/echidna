@@ -1,7 +1,5 @@
 #include "utils/threadpool.hpp"
 
-#include <iostream>
-
 namespace echidna::utils {
     ThreadPool::ThreadPool(size_t num_threads) : num_threads(num_threads), active(true) {
         this->threads = new std::thread[num_threads];
