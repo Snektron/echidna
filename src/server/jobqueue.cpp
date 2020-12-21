@@ -1,6 +1,8 @@
 #include "server/jobqueue.hpp"
 #include "utils/log.hpp"
 
+#include <chrono>
+
 namespace echidna::server {
     JobQueue::JobQueue() : job_offset(0) {}
 
@@ -15,7 +17,8 @@ namespace echidna::server {
         this->jobs[job_id] = new Job(shader, frames, fps, width, height);
         this->job_queue.push_back(job_id);
 
-        log::write("Created job ", job_id);
+        auto start = std::chrono::system_clock::now();
+        log::write("Created job ", job_id, " at ", std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count(), " ms");
 
         this->job_wait.notify_all();
         return job_id;
@@ -68,7 +71,8 @@ namespace echidna::server {
     }
 
     void JobQueue::finishJob(uint32_t job_id) {
-        log::write("Finished job ", job_id);
+        auto end = std::chrono::system_clock::now();
+        log::write("Finished job ", job_id, " at ", std::chrono::duration_cast<std::chrono::milliseconds>(end.time_since_epoch()).count(), " ms");
 
         {
             std::unique_lock lock(this->job_map_mutex);
