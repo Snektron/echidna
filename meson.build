@@ -12,7 +12,8 @@ sources = [
     'src/net/serversocket.cpp',
     'src/net/socket.cpp',
     'src/utils/log.cpp',
-    'src/utils/threadpool.cpp'
+    'src/utils/threadpool.cpp',
+    'src/utils/argparse.cpp',
 ]
 
 server_sources = [
@@ -33,7 +34,7 @@ client_sources = [
     'src/client/device.cpp',
     'src/client/main.cpp',
     'src/client/renderer.cpp',
-    'src/client/renderqueue.cpp'
+    'src/client/renderqueue.cpp',
 ]
 
 cli_sources = [

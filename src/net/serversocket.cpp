@@ -45,7 +45,7 @@ namespace echidna::net {
 
         int status = getaddrinfo(addr.c_str(), port_str.c_str(), &hints, &addresses);
         if(status != 0)
-            throw error::SocketException("Failed to resolve hostname ", addr, " at port ", port, ", error", status);
+            throw error::SocketException("Failed to resolve hostname '", addr, "' at port ", port, ", error", status);
 
         for(struct addrinfo* addr = addresses; addr != nullptr; addr = addr->ai_next) {
             int sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);

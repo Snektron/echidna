@@ -1,9 +1,7 @@
 #include <iostream>
-#include <cstring>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <charconv>
 #include <fstream>
 #include <sstream>
 #include <string_view>
@@ -11,6 +9,7 @@
 #include "net/socket.hpp"
 #include "protocol/cli.hpp"
 #include "error/network.hpp"
+#include "utils/argparse.hpp"
 
 struct JobStatus {
     uint32_t id;
@@ -100,30 +99,10 @@ void print_help(const char* prog) {
 
 template <typename T>
 bool parseIntArg(const char* arg, T& value, const char* opt_name) {
-    size_t len = std::strlen(arg);
-    auto [end, err] = std::from_chars(arg, arg + len, value);
-    if (err != std::errc() || end != arg + len) {
+    if (!echidna::utils::parseIntArg(arg, value)) {
         std::cerr << "Error: Invalid value '" << arg << "' for " << opt_name << std::endl;
         return false;
     }
-
-    return true;
-}
-
-bool parseDimArg(const char* arg, uint32_t& w, uint32_t& h) {
-    const char* x = std::strchr(arg, 'x');
-    if (!x)
-        return false;
-
-    auto [wend, werr] = std::from_chars(arg, x, w);
-    if (werr != std::errc() || wend != x)
-        return false;
-
-    size_t len = std::strlen(arg);
-    auto [hend, herr] = std::from_chars(x + 1, arg + len, h);
-    if (herr != std::errc() || hend != arg + len)
-        return false;
-
     return true;
 }
 
@@ -216,7 +195,7 @@ int main(int argc, char* argv[]) {
     }
 
     uint32_t w, h;
-    if (dim_opt && !parseDimArg(dim_opt, w, h)) {
+    if (dim_opt && !echidna::utils::parseDimArg(dim_opt, w, h)) {
         std::cerr << "Error: Invalid value '" << dim_opt << "' for --dim" << std::endl;
         return EXIT_FAILURE;
     }

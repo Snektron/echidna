@@ -60,7 +60,7 @@ $ module load cuda11.1
 
 ### Compiling the client
 
-Because of some misconfigurations, the default opencl-nvidia module provided by the DAS5 still points to an old installation. Instead, the package config included in the das5 directory should be used when compiling the client. By default, the head node will have the PKG_CONFIG_PATH environment variable set due to another misconfiguration, to an opencl-intel installation containing an erroneous package config. This package config path needs to be removed, and then the proper package config needs to be set when building:
+Because of some misconfigurations, the default opencl-nvidia module provided by the DAS5 still points to an old installation. Instead, the package config included in the das5 directory should be used when compiling the client. By default, the head node will have the PKG_CONFIG_PATH environment variable set due to another misconfiguration to an opencl-intel installation containing an erroneous package config. This package config path needs to be removed, and then the proper package config needs to be set when building:
 ```
 $ unset PKG_CONFIG_PATH
 $ meson .. -Dpkg_config_path=../das5
