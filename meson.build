@@ -70,7 +70,7 @@ executable(
     'echidna-client',
     sources + client_sources,
     install: true,
-    build_by_default: true,
+    build_by_default: false,
     include_directories: include,
     dependencies: client_deps
 )

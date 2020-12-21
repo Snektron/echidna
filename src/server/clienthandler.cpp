@@ -35,6 +35,8 @@ namespace echidna::server {
     }
 
     void ClientHandler::stop() {
+        this->manager.removeClient(this->client_id);
+
         log::write("Stop called");
         this->active = false;
         this->socket->close();
@@ -115,8 +117,6 @@ namespace echidna::server {
             log::write("Recv error: ", e.what());
         }
 
-        this->manager.returnJobs(this->active_tasks);
-
         this->active = false;
         this->keepalive_cond.notify_all();
 
@@ -175,7 +175,6 @@ namespace echidna::server {
                     }
 
                     if(!this->issueRequest(packet.get(), packet_size)) {
-                        this->manager.returnJobs(this->active_tasks);
                         this->active_tasks.clear();
                         this->stop();
                         return;
@@ -195,5 +194,10 @@ namespace echidna::server {
         this->new_jobs = true;
 
         this->job_update_cond.notify_all();
+    }
+
+    std::vector<Task> ClientHandler::getJobs() {
+        std::unique_lock lock(this->task_mutex);
+        return this->active_tasks;
     }
 }

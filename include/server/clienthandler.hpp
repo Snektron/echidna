@@ -64,6 +64,8 @@ namespace echidna::server {
 
             size_t getJobCapability() const;
             void submitTasks(const std::vector<Task>&);
+
+            std::vector<Task> getJobs();
     };
 }
 

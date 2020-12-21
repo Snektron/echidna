@@ -52,6 +52,7 @@ namespace echidna::server {
             void notifyUpdate(uint32_t, uint32_t);
             void notifyFinish(uint32_t);
             void returnJobs(const std::vector<Task>&);
+            void removeClient(uint32_t);
     };
 }
 

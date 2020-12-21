@@ -157,4 +157,13 @@ namespace echidna::server {
     void ClientManager::returnJobs(const std::vector<Task>& jobs) {
         this->job_queue.addTasks(jobs);
     }
+
+    void ClientManager::removeClient(uint32_t client_id) {
+        std::unique_lock lock(this->client_map_mutex);
+        ClientHandler* handler = this->client_map[client_id];
+        std::vector<Task> tasks = handler->getJobs();
+        delete handler;
+        this->client_map.erase(client_id);
+        this->returnJobs(tasks);
+    }
 }
