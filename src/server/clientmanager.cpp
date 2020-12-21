@@ -133,7 +133,11 @@ namespace echidna::server {
                 }
 
                 ClientHandler* handler = this->client_map[free_client_id];
-                handler->submitTasks(tasks);
+                if(!handler->submitTasks(tasks)) {
+                    client_map_lock.unlock();
+                    this->job_queue.addTasks(tasks);
+                    continue;
+                }
             }
         }
     }
@@ -162,8 +166,6 @@ namespace echidna::server {
         std::unique_lock lock(this->client_map_mutex);
         ClientHandler* handler = this->client_map[client_id];
         std::vector<Task> tasks = handler->getJobs();
-        delete handler;
-        this->client_map.erase(client_id);
         this->returnJobs(tasks);
     }
 }

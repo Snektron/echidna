@@ -188,12 +188,15 @@ namespace echidna::server {
         return this->job_capability;
     }
 
-    void ClientHandler::submitTasks(const std::vector<Task>& tasks) {
+    bool ClientHandler::submitTasks(const std::vector<Task>& tasks) {
+        if(!this->active)
+            return false;
         std::unique_lock lock(this->task_mutex);
         this->active_tasks = tasks;
         this->new_jobs = true;
 
         this->job_update_cond.notify_all();
+        return true;
     }
 
     std::vector<Task> ClientHandler::getJobs() {

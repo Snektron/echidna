@@ -63,7 +63,7 @@ namespace echidna::server {
             bool tryKeepAlive();
 
             size_t getJobCapability() const;
-            void submitTasks(const std::vector<Task>&);
+            bool submitTasks(const std::vector<Task>&);
 
             std::vector<Task> getJobs();
     };
