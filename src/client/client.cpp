@@ -4,7 +4,7 @@
 #include "error/network.hpp"
 #include "error/clientexception.hpp"
 #include "protocol/packet.hpp"
-#include "uitls/log.h"
+#include "utils/log.hpp"
 
 #include <cstring>
 
@@ -109,14 +109,13 @@ namespace echidna::client {
 
                     if(!this->issueRequest(request.get(), request_size)) {
                         this->stop();
-
-                        //TODO: log
+                        log::write("Network error: Failed to send");
                     }
                 }
             }
         }
         catch(const error::NetworkException& e) {
-            //TODO: log this
+            log::write("Network error: ", e.what());
         }
         this->stop();
     }

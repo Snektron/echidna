@@ -1,7 +1,7 @@
 #include "server/clienthandler.hpp"
 #include "server/clientmanager.hpp"
-
 #include "error/network.hpp"
+#include "utils/log.hpp"
 
 #include <unordered_set>
 #include <sstream>
@@ -23,7 +23,7 @@ namespace echidna::server {
     ClientHandler::~ClientHandler() {}
 
     void ClientHandler::run() {
-        std::cout << "Client handler active for client " << this->client_id << std::endl;
+        log::write("Client handler active for client ", this->client_id);
         this->active = true;
         this->active_thread = std::thread(&ClientHandler::handleResponse, this);
         this->issue_thread = std::thread(&ClientHandler::handleIssue, this);
@@ -35,7 +35,7 @@ namespace echidna::server {
     }
 
     void ClientHandler::stop() {
-        std::cout << "Stop called" << std::endl;
+        log::write("Stop called");
         this->active = false;
         this->socket->close();
 
@@ -112,7 +112,7 @@ namespace echidna::server {
             }
         }
         catch(const error::NetworkException& e) {
-            std::cout << "Recv error: " << e.what() << std::endl;
+            log::write("Recv error: ", e.what());
         }
 
         this->manager.returnJobs(this->active_tasks);
