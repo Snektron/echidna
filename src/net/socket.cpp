@@ -74,6 +74,7 @@ namespace echidna::net {
 
     void Socket::close() {
         if(this->platform_data != nullptr && this->platform_data->sock != -1) {
+            ::shutdown(this->platform_data->sock, SHUT_RDWR);
             ::close(this->platform_data->sock);
             this->platform_data->sock = -1;
         }
