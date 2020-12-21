@@ -21,7 +21,7 @@ There are three basic parts to Echidna: The server, client and cli. The client r
 ```
 $ ./echidna-server
 ```
-This executable takes no parameters, and binds to 0.0.0.0:4242 by default.
+This executable takes no parameters, and binds to 0.0.0.0 ports 4242 and 4243 by default.
 
 Next, a set of clients should be connected to the server:
 ```
