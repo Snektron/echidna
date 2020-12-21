@@ -1,7 +1,7 @@
 #define EPSILON (1e-4)
 #define PI (3.14159265f)
 #define TAU (2 * PI)
-#define SAMPLES (16)
+#define SAMPLES (64)
 
 // http://www.kevinbeason.com/smallpt/
 

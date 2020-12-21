@@ -10,7 +10,7 @@
 #include <array>
 
 namespace echidna::client {
-    constexpr const size_t FRAMES = 2;
+    constexpr const size_t FRAMES = ECHIDNA_CONCURRENT_FRAMES; // set via meson
 
     struct Frame {
         UniqueEvent kernel_completed;

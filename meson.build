@@ -36,13 +36,17 @@ client_sources = [
     'src/client/renderqueue.cpp'
 ]
 
-client_test_sources = [
-    'src/client/main.cpp',
-    'src/client/client.cpp',
-    'src/client/renderqueue.cpp'
+cli_sources = [
+    'src/cli/main.cpp'
 ]
 
-add_project_arguments(['-DCL_TARGET_OPENCL_VERSION=120'], language: 'cpp')
+add_project_arguments(
+    [
+        '-DCL_TARGET_OPENCL_VERSION=120',
+        '-DECHIDNA_CONCURRENT_FRAMES=@0@'.format(get_option('concurrent_frames')),
+    ],
+    language: 'cpp'
+)
 
 include = include_directories('include')
 
@@ -65,25 +69,16 @@ executable(
     'echidna-client',
     sources + client_sources,
     install: true,
-    build_by_default: false,
+    build_by_default: true,
     include_directories: include,
     dependencies: client_deps
 )
 
 executable(
     'echidna-cli',
-    sources + ['src/cli/main.cpp'],
+    sources + cli_sources,
     install: true,
-    build_by_default: false,
-    include_directories: include,
-    dependencies: dependency('threads')
-)
-
-executable(
-    'echidna-client-test',
-    sources + client_test_sources,
-    install: true,
-    build_by_default: false,
+    build_by_default: true,
     include_directories: include,
     dependencies: dependency('threads')
 )

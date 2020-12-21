@@ -1,0 +1,1 @@
+option('concurrent_frames', type: 'integer', min: 1, value: 2, description: 'The number of frames each GPU can render concurrently')
