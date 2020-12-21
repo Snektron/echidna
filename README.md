@@ -11,9 +11,32 @@ $ ninja
 
 ```
 
-This compiled the client (echidna-client), server (echidna-server) and the cli interface (echidna-cli) by default.
+This compiled the client (echidna-client), server (echidna-server) and the cli (echidna-cli) by default.
 
 Echidna renders multiple frames concurrently by using a slot mechanism. By default, each GPU has 2 slots. This number can be overridden at compiletime by passing `-Dconcurrent_frames=<amt>` to Meson.
+
+## Usage
+
+There are three basic parts to Echidna: The server, client and cli. The client represents a worker that can accept rendering tasks from the server, and the cli can be used to upload tasks to the server. The server then schedules this across the available clients in order to complete the rendering task. To set this up, the server should be started first:
+```
+$ ./echidna-server
+```
+This executable takes no parameters, and binds to 0.0.0.0:4242 by default.
+
+Next, a set of clients should be connected to the server:
+```
+$ ./echidna-client host 4242
+```
+This will start a client on the machine the command is executed, and will make its GPUs available for render tasks. Note that the server will accept jobs without any clients connected (they will simply wait on an internal queue), and extra clients can be connected at any moment.
+
+Finally, a job can be launched using the cli:
+```
+$ ./echidna-cli --host host --submit kernel.ocl --frames 100 --dim 1920x1080
+```
+The status of jobs scheduled by the server can also be queried using the cli:
+```
+$ ./echidna-cli --host host --query
+```
 
 ## DAS-5 Setup
 
