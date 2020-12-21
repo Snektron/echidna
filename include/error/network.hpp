@@ -4,6 +4,7 @@
 #include "error/exception.hpp"
 
 namespace echidna::error {
+    //A generic network error
     class NetworkException : public Exception {
         public:
             template <typename... T>
@@ -11,6 +12,7 @@ namespace echidna::error {
             virtual ~NetworkException() = default;
     };
 
+    //Error when using a socket
     class SocketException : public NetworkException {
         public:
             template <typename... T>

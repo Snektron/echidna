@@ -6,7 +6,7 @@
 #include "server/jobqueue.hpp"
 
 namespace echidna::server {
-
+    //Main server class, wraps all sub-servers and server-wide state
     class Server {
         private:
             JobQueue job_queue;
@@ -14,9 +14,9 @@ namespace echidna::server {
             CLIManager cli_manager;
         public:
             struct Config {
-                int client_port;
-                int cli_port;
-                size_t client_keepalive_timeout;
+                int client_port; //Port to which the clients can connect
+                int cli_port; //Port to which the CLI interfaces can connect
+                size_t client_keepalive_timeout; //Keepalive interval
             };
 
             Server(const Config&);

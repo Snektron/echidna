@@ -10,6 +10,7 @@
 #include <atomic>
 
 namespace echidna::utils {
+    //A utility class defining a thread pool
     class ThreadPool {
         private:
             std::thread* threads;
@@ -20,11 +21,14 @@ namespace echidna::utils {
 
             std::atomic<bool> active;
 
+            //Main routine run in threads
             void threadCallback();
         public:
+            //Construct a thread pool with a given number of threads
             ThreadPool(size_t);
             ~ThreadPool();
 
+            //Schedule a callback to run on the threadpool
             template <typename F>
             void schedule(F callback) {
                 std::unique_lock lock(this->job_queue_mut);
@@ -33,8 +37,11 @@ namespace echidna::utils {
                 this->job_queue_var.notify_one();
             }
 
+            //Drain the threadpool then stop all threads
             void stop();
+            //Halt until all threads on the threadpool finish
             void join();
+            //Complete all jobs in the current job queue
             void drain();
     };
 }

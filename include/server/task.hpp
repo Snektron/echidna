@@ -5,6 +5,7 @@
 #include <cstdint>
 
 namespace echidna::server {
+    //Contains the full description of the rendering of a single frame
     struct Task {
         std::string shader;
         uint32_t frame;

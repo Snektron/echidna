@@ -5,6 +5,7 @@
 #include <sstream>
 
 namespace echidna::utils::string {
+    //Create a string from the given arguments, concatenating them
     template <typename... T>
     std::string make_string(const T&... args) {
         std::stringstream ss;

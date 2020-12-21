@@ -135,6 +135,7 @@ namespace echidna::server {
 
                 std::map<uint32_t, JobRequest> requests;
 
+                //Group all tasks from the same job into one packet
                 this->rendered_frames = this->active_tasks.size();
                 for(size_t i = 0; i < this->active_tasks.size(); ++i) {
                     bool already_exists = requests.count(this->active_tasks[i].job) > 0;
@@ -149,6 +150,7 @@ namespace echidna::server {
                     r.frames.push_back(this->active_tasks[i].frame);
                 }
 
+                //Issue the requests
                 for(auto& it : requests) {
                     uint64_t shader_size = it.second.shader.size();
                     uint32_t frame_size = it.second.frames.size();

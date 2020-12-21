@@ -37,12 +37,15 @@ namespace echidna::server {
         std::vector<Task> results;
         std::unique_lock lock(this->job_mutex);
 
+        //Wait until a job is available
         this->job_wait.wait(lock, [&] {return this->job_queue.size() > 0 || this->task_queue.size() > 0;});
 
+        //Check the priority queue first
         while(this->task_queue.size() > 0 && results.size() < max_jobs) {
             results.push_back(task_queue.front());
             task_queue.pop_front();
         }
+        //Check for regular jobs
         while(this->job_queue.size() > 0 && results.size() < max_jobs) {
             std::shared_lock lock2(this->job_map_mutex);
             uint32_t job_id = this->job_queue.front();

@@ -89,6 +89,7 @@ namespace echidna::server {
 
             for(auto& it : handlers) {
                 if(!it.second->tryKeepAlive()) {
+                    //Keepalive failed, client error has occured, stop the client
                     it.second->stop();
                     it.second->join();
 
@@ -102,6 +103,7 @@ namespace echidna::server {
 
     void ClientManager::handleJobDistribution() {
         while(this->active) {
+            //Wait until a client is available for processing
             uint32_t free_client_id;
             {
                 std::unique_lock free_lock(this->free_client_mutex);
@@ -114,6 +116,7 @@ namespace echidna::server {
                 this->free_clients.pop_front();
             }
 
+            //Figure out how many frames the client can process within a reasonable timeframe
             size_t job_capability;
             {
                 std::shared_lock client_map_lock(this->client_map_mutex);
@@ -124,6 +127,7 @@ namespace echidna::server {
                 job_capability = handler->getJobCapability();
             }
 
+            //Fetch a set of jobs for the client
             std::vector<Task> tasks = this->job_queue.getJobs(job_capability);
 
             {
@@ -134,6 +138,7 @@ namespace echidna::server {
                     continue;
                 }
 
+                //Submit the jobs
                 ClientHandler* handler = this->client_map[free_client_id];
                 if(!handler->submitTasks(tasks)) {
                     client_map_lock.unlock();
@@ -165,6 +170,7 @@ namespace echidna::server {
     }
 
     void ClientManager::removeClient(uint32_t client_id) {
+        //Remove a client, return jobs to the job queue
         std::unique_lock lock(this->client_map_mutex);
         ClientHandler* handler = this->client_map[client_id];
         std::vector<Task> tasks = handler->getJobs();

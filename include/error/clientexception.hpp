@@ -4,6 +4,7 @@
 #include "error/exception.hpp"
 
 namespace echidna::error {
+    //Generic exception on the client
     class ClientException : public Exception {
         public:
             template <typename... T>
@@ -11,6 +12,7 @@ namespace echidna::error {
             virtual ~ClientException() = default;
     };
 
+    //Exception thrown when no jobs could be obtained
     class NoJobsAvailableException : public ClientException {
         public:
             template <typename... T>

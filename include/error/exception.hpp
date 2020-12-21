@@ -4,6 +4,7 @@
 #include "utils/string.hpp"
 
 namespace echidna::error {
+    //Base class of all exceptions in the program
     class Exception : public std::runtime_error {
         public:
             template <typename... T>
