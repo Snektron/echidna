@@ -56,7 +56,7 @@ int main(int argc, const char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    uint16_t port = 4243;
+    uint16_t port = 4242;
     if (port_opt && !echidna::utils::parseIntArg(port_opt, port)) {
         std::cerr << "Error: Expected 16-bit unsigned integer for --port" << std::endl;
         return EXIT_FAILURE;
