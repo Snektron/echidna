@@ -28,11 +28,12 @@ namespace echidna::client {
 
     void Client::join() {
         this->recv_thread.join();
+        this->send_thread.join();
     }
 
     void Client::stop() {
         this->active = false;
-
+        this->send_queue_cond.notify_all();
         this->socket.close();
     }
 
@@ -52,6 +53,7 @@ namespace echidna::client {
         try {
             while(this->active) {
                 protocol::ServerPacketID id = this->socket.recv<protocol::ServerPacketID>();
+                log::write("handleRecv");
                 switch(id) {
                     case protocol::ServerPacketID::KEEPALIVE: {
                             protocol::ClientPacketID id = protocol::ClientPacketID::KEEPALIVE;

@@ -82,9 +82,19 @@ int main(int argc, const char* argv[]) {
                 client.requestMoreJobs();
             });
 
-            auto task = renderer.createRenderTask(task_info);
+            log::write("Starting task ", task_info.job_id);
 
-            auto avg_frame_time = renderer.runUntilCompletion(task);
+            uint64_t avg_frame_time;
+            try {
+                auto task = renderer.createRenderTask(task_info);
+
+                avg_frame_time = renderer.runUntilCompletion(task);
+            } catch (const echidna::error::Exception& err) {
+                log::write("Render error: ", err.what());
+                client.stop();
+                client.join();
+                return EXIT_FAILURE;
+            }
 
             client.updateServer(task_info.job_id, task_info.timestamps, avg_frame_time);
         }

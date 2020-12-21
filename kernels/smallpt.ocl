@@ -1,7 +1,7 @@
 #define EPSILON (1e-4)
 #define PI (3.14159265f)
 #define TAU (2 * PI)
-#define SAMPLES (64)
+#define SAMPLES (32)
 
 // http://www.kevinbeason.com/smallpt/
 
@@ -57,7 +57,7 @@ double sphere_intersect(constant struct sphere* s, struct ray r) {
     return (t = b - d) > EPSILON ? t : (t = b + d) > EPSILON ? t : 0.f;
 }
 
-inline int scene_intersect(struct ray r, float* t, int ignore) {
+inline int scene_intersect(struct ray r, float* t, int ignore, struct sphere* out) {
     int i = -1;
     float t0 = 1e30;
     for (int j = 0; j < sizeof(scene) / sizeof(struct sphere); ++j) {
@@ -69,6 +69,9 @@ inline int scene_intersect(struct ray r, float* t, int ignore) {
     }
 
     *t = t0;
+    if (i != -1) {
+        *out = scene[i];
+    }
     return i;
 }
 
@@ -85,7 +88,8 @@ float3 radiance(struct ray r, int depth, private uint2* seed) {
 
     for (int i = 0; i < depth; ++i) {
         float t;
-        int index = scene_intersect(r, &t, last);
+        struct sphere s;
+        int index = scene_intersect(r, &t, last, &s);
         if (index == -1) {
             f_accum = (float3){0, 0, 0};
             break;

@@ -64,6 +64,7 @@ namespace echidna::client {
     }
 
     Renderer::~Renderer() {
+        log::write("~Renderer");
         this->finishAll();
     }
 
@@ -99,7 +100,7 @@ namespace echidna::client {
     uint64_t Renderer::runUntilCompletion(RenderTask& task) {
         for (auto timestamp : task.task_info.timestamps) {
             auto [device_index, frame_index] = schedule();
-            log::write(timestamp, ": launching on device ", device_index, " image ", frame_index);
+            log::write(timestamp, ": launching on device ", device_index, " frame ", frame_index);
             this->launch(task, device_index, frame_index, timestamp);
         }
         this->finishAll();
@@ -243,6 +244,8 @@ namespace echidna::client {
 
             auto end_time = std::chrono::steady_clock::now();
             auto frame_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - info->start_time).count();
+
+            log::write(info->timestamp, ": finished in ", frame_time, " us");
 
             std::lock_guard<std::mutex> lk(info->renderer->mutex);
             info->task->cumulative_frame_time += frame_time;
