@@ -6,6 +6,7 @@
 #include <cstdint>
 
 namespace echidna::utils {
+    // Parse an int argument, returns false when its not in a valid format.
     template <typename T>
     bool parseIntArg(const char* arg, T& value) {
         size_t len = std::strlen(arg);
@@ -17,6 +18,7 @@ namespace echidna::utils {
         return true;
     }
 
+    // Parse a <w>x<h> dimension. Returns false when `arg` is not in a valid format.
     bool parseDimArg(const char* arg, uint32_t& w, uint32_t& h);
 }
 

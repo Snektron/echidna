@@ -6,6 +6,7 @@
 #include <cstdint>
 
 namespace echidna::client {
+    // A structure representing information about a task to be rendered.
     struct RenderTaskInfo {
         std::string kernel_source;
         std::vector<uint32_t> timestamps;
