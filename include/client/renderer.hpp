@@ -103,6 +103,9 @@ namespace echidna::client {
             // Wait until all compression kernels have performed all their work.
             void wait();
 
+            // Throw an exception if there is any error in the errors vector.
+            void throwIfKernelError();
+
             // OpenCL event callback invoked when an image has been downloaded to host memory.
             static void targetDownloaded(cl_event event, cl_int status, void* user_data);
     };

@@ -11,12 +11,16 @@
 #include "error/network.hpp"
 #include "utils/argparse.hpp"
 
+// A commandline program used to send jobs to the server, and query for status
+
+// Structure describing a Job's status
 struct JobStatus {
     uint32_t id;
     uint32_t frames_rendered;
     uint32_t total_frames;
 };
 
+// Submit a job to the server. Returns the job id.
 uint32_t submit_job(echidna::net::Socket& sock, const std::string& shader, uint32_t frames, uint32_t fps, uint32_t width, uint32_t height) {
     uint32_t shader_size = shader.size();
 
@@ -35,6 +39,8 @@ uint32_t submit_job(echidna::net::Socket& sock, const std::string& shader, uint3
     return sock.recv<uint32_t>();
 }
 
+// Submit a kernel (which is read from file) to the server. Returns EXIT_FAILURE if there has been a problem, otherwise
+// return EXIT_SUCCESS.
 int submit(echidna::net::Socket& sock, const char* kernel, uint32_t frames, uint32_t fps, uint32_t w, uint32_t h) {
     std::ifstream kernel_src(kernel);
     if (!kernel_src) {
@@ -52,6 +58,7 @@ int submit(echidna::net::Socket& sock, const char* kernel, uint32_t frames, uint
     return EXIT_SUCCESS;
 }
 
+// Query for a list of jobs from the server.
 std::vector<JobStatus> query_status(echidna::net::Socket& sock) {
     echidna::protocol::CLIRequestID request = echidna::protocol::CLIRequestID::STATUS;
     sock.sendFully(&request, sizeof(request));
@@ -69,6 +76,7 @@ std::vector<JobStatus> query_status(echidna::net::Socket& sock) {
     return result;
 }
 
+// Query for a list of jobs, and print it to cout.
 int query(echidna::net::Socket& sock) {
     for (const auto& status : query_status(sock)) {
         std::cout << status.id << ": ";
@@ -82,6 +90,7 @@ int query(echidna::net::Socket& sock) {
     return EXIT_SUCCESS;
 }
 
+// Print a help message.
 void print_help(const char* prog) {
     std::cerr << "Usage: " << prog << " [options...]\n"
         << "options:\n"
@@ -97,6 +106,7 @@ void print_help(const char* prog) {
         << "                    with --submit\n";
 }
 
+// Parse an integer and print an error if that fails.
 template <typename T>
 bool parseIntArg(const char* arg, T& value, const char* opt_name) {
     if (!echidna::utils::parseIntArg(arg, value)) {
