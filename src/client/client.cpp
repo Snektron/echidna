@@ -53,7 +53,6 @@ namespace echidna::client {
         try {
             while(this->active) {
                 protocol::ServerPacketID id = this->socket.recv<protocol::ServerPacketID>();
-                log::write("handleRecv");
                 switch(id) {
                     case protocol::ServerPacketID::KEEPALIVE: {
                             protocol::ClientPacketID id = protocol::ClientPacketID::KEEPALIVE;

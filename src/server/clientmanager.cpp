@@ -11,9 +11,11 @@ namespace echidna::server {
     }
 
     ClientManager::~ClientManager() {
-        std::shared_lock(this->client_map_mutex);
+        std::unique_lock lock(this->client_map_mutex);
 
         for(auto& it : this->client_map) {
+            it.second->stop();
+            it.second->join();
             delete it.second;
         }
     }

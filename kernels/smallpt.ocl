@@ -1,7 +1,7 @@
 #define EPSILON (1e-4)
 #define PI (3.14159265f)
 #define TAU (2 * PI)
-#define SAMPLES (32)
+#define SAMPLES (64)
 
 // http://www.kevinbeason.com/smallpt/
 
@@ -57,7 +57,7 @@ double sphere_intersect(constant struct sphere* s, struct ray r) {
     return (t = b - d) > EPSILON ? t : (t = b + d) > EPSILON ? t : 0.f;
 }
 
-inline int scene_intersect(struct ray r, float* t, int ignore, struct sphere* out) {
+inline int scene_intersect(struct ray r, float* t, int ignore) {
     int i = -1;
     float t0 = 1e30;
     for (int j = 0; j < sizeof(scene) / sizeof(struct sphere); ++j) {
@@ -69,9 +69,6 @@ inline int scene_intersect(struct ray r, float* t, int ignore, struct sphere* ou
     }
 
     *t = t0;
-    if (i != -1) {
-        *out = scene[i];
-    }
     return i;
 }
 
@@ -88,8 +85,7 @@ float3 radiance(struct ray r, int depth, private uint2* seed) {
 
     for (int i = 0; i < depth; ++i) {
         float t;
-        struct sphere s;
-        int index = scene_intersect(r, &t, last, &s);
+        int index = scene_intersect(r, &t, last);
         if (index == -1) {
             f_accum = (float3){0, 0, 0};
             break;
@@ -173,10 +169,13 @@ kernel void render(write_only image2d_t target, uint timestamp) {
     int2 pix = (int2){get_global_id(0), get_global_id(1)};
     float2 pixf = convert_float2(pix) + 0.5f / SAMPLES;
     float2 dim = convert_float2(get_image_dim(target));
-    float3 fwd = {0, -0.042612f, -1};
-    float3 up = {0, 1, 0};
-    float3 ro = {50, 52, 295.6};
     float aspect = dim.y / dim.x;
+
+    float time = (float) timestamp * 1 / 60.f;
+
+    float3 up = {0, 1, 0};
+    float3 ro = {50 + sin(time) * 40, 52, 295.6};
+    float3 fwd = normalize((float3){50, 50, 50} - ro);
 
     private uint2 seed = {
         (uint) (get_global_id(0) + get_global_id(1) * get_image_width(target)),

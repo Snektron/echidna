@@ -90,7 +90,7 @@ int main(int argc, const char* argv[]) {
 
                 avg_frame_time = renderer.runUntilCompletion(task);
             } catch (const echidna::error::Exception& err) {
-                log::write("Stopping client");
+                log::write("Render Error: ", err.what());
                 client.stop();
                 client.join();
                 return EXIT_FAILURE;

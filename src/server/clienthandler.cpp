@@ -35,14 +35,14 @@ namespace echidna::server {
     }
 
     void ClientHandler::stop() {
-        this->manager.removeClient(this->client_id);
-
         log::write("Stop called");
         this->active = false;
         this->socket->close();
 
         this->job_update_cond.notify_all();
         this->keepalive_cond.notify_all();
+
+        this->manager.removeClient(this->client_id);
     }
 
     bool ClientHandler::tryKeepAlive() {

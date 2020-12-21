@@ -64,7 +64,6 @@ namespace echidna::client {
     }
 
     Renderer::~Renderer() {
-        log::write("~Renderer");
         this->finishAll();
     }
 
